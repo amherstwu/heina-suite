@@ -1,0 +1,102 @@
+/**
+ * Heina Suite — design tokens（全站 UI 基礎）
+ * 暖石色底 + 鼠尾草強調，減少純白刺眼感。
+ */
+:root {
+  --font-display: 'Plus Jakarta Sans', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
+
+  --heina-page: #faf6f2;
+  --heina-beige: var(--heina-page);
+  --heina-card: #fffdf9;
+  --heina-elevated: #ffffff;
+
+  --heina-blue: #6b8f71;
+  --heina-blue-deep: #557a5c;
+  --heina-blue-soft: rgba(107, 143, 113, 0.18);
+  --heina-blue-glow: rgba(107, 143, 113, 0.22);
+
+  --heina-dark: #2c2a26;
+  --foreground: #2c2a26;
+  --muted-foreground: #5c574f;
+  --subtle-foreground: #8a847a;
+
+  --heina-accent: #c49a6c;
+  --heina-mint: #5a9a8c;
+  --heina-mint-dark: #4a8578;
+
+  --heina-border: rgba(90, 82, 70, 0.14);
+  --heina-border-strong: rgba(90, 82, 70, 0.22);
+  --heina-shadow: 0 1px 2px rgba(44, 42, 38, 0.04), 0 10px 40px -12px rgba(44, 42, 38, 0.1);
+  --heina-shadow-hover: 0 12px 40px -10px rgba(107, 143, 113, 0.18);
+  --heina-shadow-card: 0 0 0 1px rgba(255, 252, 245, 0.65) inset, 0 1px 2px rgba(44, 42, 38, 0.04),
+    0 16px 48px -16px rgba(44, 42, 38, 0.1);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
+
+  --sidebar-bg: linear-gradient(180deg, #fffdf9 0%, #faf6f2 100%);
+  --sidebar-border: rgba(90, 82, 70, 0.12);
+  --sidebar-item-hover: rgba(107, 143, 113, 0.08);
+  --sidebar-active-bg: #ffffff;
+  --sidebar-active-border: var(--heina-blue);
+  --sidebar-active-shadow: 0 1px 3px rgba(44, 42, 38, 0.03), 0 8px 24px -8px rgba(107, 143, 113, 0.1);
+
+  --page-orbs: radial-gradient(ellipse 900px 480px at 96% -12%, rgba(123, 111, 214, 0.05), transparent 55%),
+    radial-gradient(ellipse 720px 420px at -6% 102%, rgba(255, 143, 171, 0.05), transparent 52%),
+    radial-gradient(ellipse 600px 360px at 48% 48%, rgba(200, 230, 212, 0.08), transparent 60%);
+
+  --ring-focus: 0 0 0 3px rgba(107, 143, 113, 0.28);
+
+  font-family: var(--font-body);
+  color: var(--foreground);
+  background: var(--heina-page);
+  line-height: 1.55;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--foreground);
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+a {
+  color: var(--heina-blue-deep);
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

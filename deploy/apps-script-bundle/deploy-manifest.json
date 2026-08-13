@@ -1,0 +1,22 @@
+{
+  "builtAt": "2026-06-02T13:53:41.525Z",
+  "package": "heina-suite",
+  "command": "npm run deploy",
+  "files": {
+    "index.html": {
+      "bytes": 1499705,
+      "sha256Prefix": "e597d1d97694e242",
+      "mtime": "2026-06-02T13:53:40.842Z"
+    },
+    "Code.gs": {
+      "bytes": 53884,
+      "sha256Prefix": "ca2339b2554d2447",
+      "mtime": "2026-06-02T13:53:41.495Z"
+    }
+  },
+  "checks": [
+    "verify-app-routes",
+    "diagnose-procurement",
+    "verify-seed"
+  ]
+}

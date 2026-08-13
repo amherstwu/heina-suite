@@ -1,0 +1,173 @@
+.v50-excel-card {
+  width: min(520px, 100%);
+  max-height: min(85vh, 640px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.v50-excel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.v50-excel-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.v50-excel-close {
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.1rem 0.35rem;
+}
+
+.v50-excel-sub {
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+.v50-excel-empty {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.v50-excel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.v50-excel-link {
+  border: none;
+  background: none;
+  color: #4f46e5;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.v50-excel-count {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.v50-excel-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.v50-excel-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.v50-excel-list li:last-child .v50-excel-row {
+  border-bottom: none;
+}
+
+.v50-excel-row input {
+  flex-shrink: 0;
+}
+
+.v50-excel-row-name {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  min-width: 0;
+}
+
+.v50-excel-row-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.v50-excel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.v50-excel-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.v50-excel-select {
+  width: 100%;
+}
+
+.v50-excel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.v50-excel-btn {
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.v50-excel-btn--ghost {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+.v50-excel-btn--primary {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.v50-excel-btn--primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.v50-excel-msg {
+  margin: 0.85rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.v50-excel-warnings {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.75rem;
+  color: #b45309;
+  line-height: 1.45;
+}

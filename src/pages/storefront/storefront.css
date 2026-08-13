@@ -1,0 +1,90 @@
+.sf-site {
+  min-height: 100dvh;
+  background: #0f1117;
+  color: #e2e8f0;
+}
+
+.sf-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(22, 27, 38, 0.85);
+  backdrop-filter: blur(12px);
+}
+
+.sf-container {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 0 1rem;
+}
+
+.sf-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: linear-gradient(135deg, #6366f1, #4338ca);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sf-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sf-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(22, 27, 38, 0.72);
+  overflow: hidden;
+}
+
+.sf-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .sf-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .sf-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+.sf-product-layout {
+  display: block;
+}
+@media (min-width: 1200px) {
+  .sf-site.sf-view-auto .sf-product-layout,
+  .sf-site.sf-view-desktop .sf-product-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+}

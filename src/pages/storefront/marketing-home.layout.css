@@ -1,0 +1,118 @@
+/* 行銷首頁：配合 PublicShell 的 sf-view-auto / desktop / mobile（與顧客專區共用 layout 偏好） */
+
+/* --- 強制手機版 --- */
+.sf-site.sf-view-mobile .mkt-hero {
+  padding: 2.5rem 1rem 3rem;
+  text-align: center;
+}
+.sf-site.sf-view-mobile .mkt-hero-inner {
+  display: block;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-mobile .mkt-hero-visual {
+  display: none;
+}
+.sf-site.sf-view-mobile .mkt-hero h1 {
+  font-size: 1.65rem;
+}
+.sf-site.sf-view-mobile .mkt-cta-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+.sf-site.sf-view-mobile .mkt-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-mobile .mkt-bento {
+  grid-template-columns: 1fr !important;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-mobile .mkt-bento .wide,
+.sf-site.sf-view-mobile .mkt-bento .tall {
+  grid-column: auto;
+  grid-row: auto;
+}
+.sf-site.sf-view-mobile .mkt-promo-row {
+  flex-direction: column;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-mobile .mkt-steps {
+  grid-template-columns: 1fr !important;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-mobile .mkt-section {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.sf-site.sf-view-mobile .mkt-cta-band {
+  margin-left: 1rem;
+  margin-right: 1rem;
+  border-radius: 1.25rem;
+}
+
+/* --- 強制網站版（大螢幕版型，窄視窗也維持） --- */
+.sf-site.sf-view-desktop .mkt-hero {
+  padding: 5rem 2rem 6rem;
+  text-align: left;
+}
+.sf-site.sf-view-desktop .mkt-hero-inner {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 3rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.sf-site.sf-view-desktop .mkt-hero-visual {
+  display: block;
+}
+.sf-site.sf-view-desktop .mkt-hero h1 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+}
+.sf-site.sf-view-desktop .mkt-cta-row {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+.sf-site.sf-view-desktop .mkt-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-desktop .mkt-bento {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-desktop .mkt-bento .wide {
+  grid-column: span 2;
+}
+.sf-site.sf-view-desktop .mkt-bento .tall {
+  grid-row: span 2;
+}
+.sf-site.sf-view-desktop .mkt-promo-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sf-site.sf-view-desktop .mkt-steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}

@@ -1,0 +1,326 @@
+/* 後台：網站版／手機版分開設計（與顧客前台 portal 偏好獨立） */
+
+.admin-layout-toggle {
+  display: inline-flex;
+  border-radius: 9999px;
+  border: 1px solid var(--ds-chrome-border);
+  background: color-mix(in srgb, var(--color-ds-surface) 92%, transparent);
+  overflow: hidden;
+}
+
+.admin-layout-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.55rem;
+  border: none;
+  background: transparent;
+  color: var(--color-ds-text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.admin-layout-toggle-btn.is-active {
+  background: color-mix(in srgb, var(--color-ds-primary) 22%, transparent);
+  color: var(--color-ds-text);
+}
+
+.admin-layout-toggle-auto {
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+/* 手機頂欄：圖示模式，隱藏文字（不動桌面頂欄） */
+.admin-layout-toggle--compact .admin-layout-toggle-btn {
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+  justify-content: center;
+  padding: 0.45rem;
+}
+
+.admin-layout-toggle--compact .admin-layout-toggle-btn > span:not(.admin-layout-toggle-auto) {
+  display: none;
+}
+
+/* 強制手機版時：桌面寬螢幕上模擬手機框 */
+.admin-shell.admin-view-mobile.admin-shell--phone-frame {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 430px;
+  height: 100dvh;
+  overflow: hidden;
+  border-left: 1px solid var(--ds-chrome-border);
+  border-right: 1px solid var(--ds-chrome-border);
+  box-shadow: 0 8px 40px rgba(30, 41, 59, 0.12);
+}
+
+/* ── 顯示切換：手機版 chrome ── */
+.admin-shell.admin-view-mobile .admin-desktop-only,
+.admin-shell.admin-view-mobile .admin-desktop-chrome {
+  display: none !important;
+}
+
+.admin-shell.admin-view-mobile .admin-mobile-only {
+  display: flex !important;
+}
+
+.admin-shell.admin-view-mobile nav.admin-mobile-bottom {
+  display: block !important;
+}
+
+/* ── 顯示切換：網站版 chrome ── */
+.admin-shell.admin-view-desktop .admin-mobile-only,
+.admin-shell.admin-view-desktop nav.admin-mobile-bottom {
+  display: none !important;
+}
+
+.admin-shell.admin-view-desktop .admin-desktop-chrome {
+  display: flex !important;
+}
+
+.admin-shell.admin-view-desktop .admin-desktop-only.admin-desktop-header {
+  display: flex !important;
+}
+
+/* ── 自動：依螢幕寬度 ── */
+@media (max-width: 767.98px) {
+  .admin-shell.admin-view-auto .admin-desktop-only,
+  .admin-shell.admin-view-auto .admin-desktop-chrome {
+    display: none !important;
+  }
+  .admin-shell.admin-view-auto .admin-mobile-only {
+    display: flex !important;
+  }
+  .admin-shell.admin-view-auto nav.admin-mobile-bottom {
+    display: block !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-shell.admin-view-auto .admin-mobile-only,
+  .admin-shell.admin-view-auto nav.admin-mobile-bottom {
+    display: none !important;
+  }
+  .admin-shell.admin-view-auto .admin-desktop-chrome {
+    display: flex !important;
+  }
+  .admin-shell.admin-view-auto .admin-desktop-only.admin-desktop-header {
+    display: flex !important;
+  }
+}
+
+/* 預設隱藏（由上方規則打開） */
+.admin-shell .admin-mobile-only {
+  display: none;
+}
+
+.admin-shell nav.admin-mobile-bottom {
+  display: none;
+}
+
+/* ── 主內容區：網站版 ── */
+.admin-shell.admin-view-desktop .admin-main {
+  overflow-x: visible;
+  border-top-left-radius: 1rem;
+  border-left: 1px solid var(--ds-chrome-border-faint);
+  border-top: 1px solid var(--ds-chrome-border-faint);
+  background: color-mix(in srgb, var(--color-ds-surface) 88%, transparent);
+  padding: 1.75rem 2.5rem 2.5rem;
+  box-shadow: inset 1px 1px 0 var(--ds-chrome-inset-line);
+}
+
+@media (min-width: 768px) {
+  .admin-shell.admin-view-auto .admin-main {
+    overflow-x: visible;
+    border-top-left-radius: 1rem;
+    border-left: 1px solid var(--ds-chrome-border-faint);
+    border-top: 1px solid var(--ds-chrome-border-faint);
+    background: color-mix(in srgb, var(--color-ds-surface) 88%, transparent);
+    padding: 1.5rem 2rem 2.5rem;
+    box-shadow: inset 1px 1px 0 var(--ds-chrome-inset-line);
+  }
+
+  .admin-shell.admin-view-auto .admin-page-layout,
+  .admin-shell.admin-view-desktop .admin-page-layout {
+    max-width: 1600px;
+  }
+}
+
+/* ── 主內容區：手機版 ── */
+.admin-shell.admin-view-mobile .admin-main {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
+  padding-top: 0.75rem;
+  overflow-x: hidden;
+}
+
+@media (max-width: 767.98px) {
+  .admin-shell.admin-view-auto .admin-main {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
+    padding-top: 0.75rem;
+    overflow-x: hidden;
+  }
+}
+
+.admin-shell.admin-view-mobile .admin-page-layout {
+  max-width: 32rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.admin-shell.admin-view-desktop .admin-page-layout .admin-page-grid {
+  gap: 1.5rem;
+}
+
+.admin-shell.admin-view-mobile .admin-page-layout .admin-page-grid {
+  gap: 0.75rem;
+}
+
+.admin-shell.admin-view-mobile .admin-page-layout .admin-col-wide {
+  grid-column: span 12;
+}
+
+/*
+ * 強制手機版／手機框預覽時，真實 viewport 仍可能 ≥ sm，
+ * Tailwind sm:flex-row 會把標題擠成單字直排；改由 admin-view 覆寫。
+ */
+.admin-shell.admin-view-mobile .admin-page-header {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+.admin-shell.admin-view-mobile .admin-page-header-text {
+  width: 100%;
+  max-width: 100%;
+  flex: none;
+}
+
+.admin-shell.admin-view-mobile .admin-page-header-title {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.admin-shell.admin-view-mobile .admin-page-header-actions {
+  width: 100% !important;
+}
+
+.admin-shell.admin-view-mobile .dash-hero {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.admin-shell.admin-view-mobile .dash-hero h1,
+.admin-shell.admin-view-mobile .gb-admin-head h1 {
+  writing-mode: horizontal-tb;
+  word-break: keep-all;
+}
+
+@media (max-width: 767.98px) {
+  .admin-shell.admin-view-auto .admin-page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+  }
+
+  .admin-shell.admin-view-auto .admin-page-header-text {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+  }
+
+  .admin-shell.admin-view-auto .admin-page-header-title {
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-shell.admin-view-auto .admin-page-header-actions {
+    width: 100% !important;
+  }
+
+  .admin-shell.admin-view-auto .dash-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-shell.admin-view-auto .dash-hero h1,
+  .admin-shell.admin-view-auto .gb-admin-head h1 {
+    writing-mode: horizontal-tb;
+    word-break: keep-all;
+  }
+}
+
+/* 手機底欄／Toast：固定於視窗；手機框預覽改為框內絕對定位 */
+.admin-shell.admin-view-mobile nav.admin-mobile-bottom,
+.admin-shell.admin-view-auto nav.admin-mobile-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.admin-shell .admin-toast-stack {
+  position: fixed;
+  bottom: calc(5.75rem + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+}
+
+.admin-shell.admin-view-mobile.admin-shell--phone-frame nav.admin-mobile-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+}
+
+.admin-shell.admin-view-mobile.admin-shell--phone-frame .admin-toast-stack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+.admin-shell.admin-view-mobile.admin-shell--phone-frame .admin-shell-body {
+  height: 100%;
+  min-height: 0;
+}
+
+.admin-shell.admin-view-mobile.admin-shell--phone-frame .admin-shell-body > .relative.z-10,
+.admin-shell.admin-view-mobile.admin-shell--phone-frame .admin-shell-column {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .admin-shell.admin-view-desktop .admin-page-layout .admin-col-half {
+    grid-column: span 6;
+  }
+  .admin-shell.admin-view-desktop .admin-page-layout .admin-col-third {
+    grid-column: span 4;
+  }
+
+  .admin-shell.admin-view-desktop .admin-toast-stack,
+  .admin-shell.admin-view-auto .admin-toast-stack {
+    bottom: 2rem;
+    align-items: center;
+  }
+
+  .admin-shell.admin-view-auto .admin-page-layout .admin-col-half {
+    grid-column: span 6;
+  }
+}

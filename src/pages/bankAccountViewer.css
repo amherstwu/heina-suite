@@ -1,0 +1,175 @@
+/* 銀行帳號安全查詢（顧客端） */
+
+.bv {
+  --bv-bg: #f7f4ef;
+  --bv-ink: #2f2a26;
+  --bv-muted: #6f6760;
+  --bv-line: #ddd4c8;
+  --bv-card: #fffcf7;
+  --bv-accent: #2a6f6a;
+  --bv-accent-soft: #e4f2f0;
+  --bv-warn: #9a3412;
+  --bv-warn-bg: #fff4ed;
+  --bv-ok: #166534;
+  --bv-ok-bg: #ecfdf3;
+  --bv-err: #b91c1c;
+
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, #e8f2ef 0%, transparent 55%),
+    radial-gradient(ellipse 70% 40% at 100% 0%, #f3ebe3 0%, transparent 50%),
+    var(--bv-bg);
+  color: var(--bv-ink);
+  font-family: 'Noto Sans TC', 'Source Han Sans TC', sans-serif;
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+.bv-top {
+  max-width: 28rem;
+  margin: 0 auto 1.25rem;
+}
+
+.bv-back {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--bv-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.bv-back:hover {
+  color: var(--bv-accent);
+}
+
+.bv-brand {
+  margin: 0 0 0.35rem;
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
+}
+
+.bv-lead {
+  margin: 0;
+  color: var(--bv-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.bv-main {
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.bv-panel {
+  background: var(--bv-card);
+  border: 1px solid var(--bv-line);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 8px 28px rgba(47, 42, 38, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.bv-panel-warn {
+  background: var(--bv-warn-bg);
+  border-color: #fdba74;
+  color: var(--bv-warn);
+}
+
+.bv-panel-ok {
+  background: var(--bv-ok-bg);
+  border-color: #86efac;
+}
+
+.bv-panel-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--bv-ok);
+}
+
+.bv-bank-info {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Noto Sans TC', ui-monospace, monospace;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.75rem;
+  color: var(--bv-ink);
+}
+
+.bv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.bv-field input {
+  font: inherit;
+  font-weight: 500;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--bv-line);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: var(--bv-ink);
+}
+
+.bv-field input:focus {
+  outline: 2px solid var(--bv-accent-soft);
+  border-color: var(--bv-accent);
+}
+
+.bv-btn {
+  appearance: none;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  background: var(--bv-accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.bv-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.bv-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.bv-btn-ghost {
+  background: transparent;
+  color: var(--bv-accent);
+  border: 1px solid var(--bv-accent);
+}
+
+.bv-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--bv-muted);
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.bv-error {
+  margin: 0;
+  color: var(--bv-err);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.bv-muted {
+  color: var(--bv-muted);
+  text-align: center;
+}

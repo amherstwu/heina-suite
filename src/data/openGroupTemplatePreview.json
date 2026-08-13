@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "sourceLabel": "示範預覽（靜態 JSON）",
+  "workbookSheetTotal": 12,
+  "registrationSheetCount": 8,
+  "registrationTopSheets": ["登記_A", "登記_B", "私接訂單"],
+  "structSheets": [
+    { "name": "開團明細", "rowCount": 24, "role": "master" },
+    { "name": "表_1", "rowCount": 18, "role": "struct" }
+  ],
+  "masterRowsSample": [
+    {
+      "title": "Jump 周邊示範團",
+      "closingDate": "2026-05-15",
+      "saleEndDate": "2026-05-10",
+      "purchaseDate": "2026-04-20",
+      "purchasePlace": "Animate",
+      "shipEta": "2026-07-01",
+      "phase": "預購中",
+      "jpyAmount": "185000",
+      "cardPay": "已刷卡",
+      "link": "https://example.com/buy"
+    }
+  ]
+}

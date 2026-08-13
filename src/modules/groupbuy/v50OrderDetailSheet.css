@@ -1,0 +1,205 @@
+.v50-order-sheet-back {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(72, 88, 108, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+@media (min-width: 640px) {
+  .v50-order-sheet-back {
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+.v50-order-sheet {
+  width: 100%;
+  max-width: 26rem;
+  max-height: min(88dvh, 36rem);
+  overflow-y: auto;
+  border-radius: 1.35rem 1.35rem 0 0;
+  background: linear-gradient(180deg, #faf8f5 0%, #f3f0eb 100%);
+  padding: 1.2rem 1.15rem calc(1.1rem + env(safe-area-inset-bottom));
+  box-shadow: 0 24px 64px rgba(30, 41, 59, 0.18);
+}
+
+@media (min-width: 640px) {
+  .v50-order-sheet {
+    border-radius: 1.35rem;
+  }
+}
+
+.v50-order-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.v50-order-sheet-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2f4568;
+}
+
+.v50-order-sheet-close {
+  border: none;
+  background: transparent;
+  color: #6b7f99;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.v50-order-sheet-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.v50-order-sheet-badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #9a3412;
+  background: rgba(251, 146, 60, 0.2);
+  border: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+.v50-order-sheet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+
+.v50-order-sheet-grid > div {
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(176, 190, 210, 0.45);
+  background: #fff;
+}
+
+.v50-order-sheet-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6b87ad;
+  margin-bottom: 0.15rem;
+}
+
+.v50-order-sheet-grid strong {
+  font-size: 0.92rem;
+  color: #2f4568;
+}
+
+.v50-order-sheet-balance-row {
+  margin-bottom: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  background: rgba(255, 251, 235, 0.95);
+  text-align: center;
+}
+
+.v50-order-sheet-balance-row .v50-order-sheet-label {
+  margin-bottom: 0.25rem;
+  font-size: 0.72rem;
+  color: #b45309;
+}
+
+.v50-order-sheet-balance-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #b45309;
+  letter-spacing: -0.03em;
+}
+
+.v50-order-sheet-section {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #5b7fb5;
+}
+
+.v50-order-sheet-items {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.v50-order-sheet-items li {
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.55rem;
+  background: #fff;
+  border: 1px solid rgba(176, 190, 210, 0.4);
+  font-size: 0.8rem;
+  color: #334155;
+}
+
+.v50-order-sheet-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.76rem;
+  color: #5c6f8f;
+  line-height: 1.45;
+}
+
+.v50-order-sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.v50-order-page-panel {
+  border-radius: 1.1rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, #faf8f5 0%, #f3f0eb 100%);
+  padding: 1.15rem 1.1rem;
+  box-shadow: 0 8px 24px rgba(30, 41, 59, 0.06);
+}
+
+.v50-order-page-source {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #8fa3be;
+}
+
+.v50-order-page-group {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+.v50-order-page-group-name {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #2f4568;
+}
+
+.v50-order-page-group-link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3b6ea8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.v50-order-page-group-link:hover {
+  color: #2f4568;
+}

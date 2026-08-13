@@ -1,0 +1,1243 @@
+.v50-alert-banner {
+  margin-bottom: 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid #ffd591;
+  background: #fff7e6;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.v50-alert-banner--info {
+  border-color: #91caff;
+  background: #e6f7ff;
+  color: #0958d9;
+}
+
+.v50-alert-banner p,
+.v50-alert-line {
+  margin: 0;
+}
+
+.v50-alert-banner p + p,
+.v50-alert-line + .v50-alert-line {
+  margin-top: 0.35rem;
+}
+
+.v50-alert-line--closing {
+  color: #d46b08;
+  font-weight: 700;
+}
+
+.v50-alert-line--sale-end {
+  color: #722ed1;
+  font-weight: 700;
+}
+
+.v50-alert-label {
+  font-weight: 800;
+}
+
+.v50-alert-label--closing {
+  color: #ad4e00;
+}
+
+.v50-alert-label--sale-end {
+  color: #531dab;
+}
+
+.v50-gcard {
+  border-radius: 1.1rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, #faf7f2 0%, #f3ece4 100%);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(30, 41, 59, 0.06);
+}
+
+.v50-gcard-pay-alert {
+  padding: 0.4rem 0.75rem;
+  background: rgba(251, 146, 60, 0.22);
+  border-bottom: 1px solid rgba(251, 146, 60, 0.38);
+  color: #c2410c;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.v50-gcard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.85rem 0;
+}
+
+.v50-gcard-head-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.v50-gcard-channel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.v50-gcard-channel--市場飯,
+.v50-gcard-channel--market {
+  color: #ad6800;
+  background: #fff7e6;
+  border-color: #ffd591;
+}
+
+.v50-gcard-channel--通販,
+.v50-gcard-channel--mail {
+  color: #08979c;
+  background: #e6fffb;
+  border-color: #87e8de;
+}
+
+.v50-gcard-ops-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.v50-gcard-status {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #5b7fb5;
+  background: rgba(91, 127, 181, 0.12);
+  border: 1px solid transparent;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.v50-gcard-status--已登記,
+.v50-gcard-status--待處理 {
+  color: #0958d9;
+  background: #e6f7ff;
+  border-color: #91caff;
+}
+
+.v50-gcard-status--已下單 {
+  color: #531dab;
+  background: #f9f0ff;
+  border-color: #d3adf7;
+}
+
+.v50-gcard-status--官方已發貨 {
+  color: #389e0d;
+  background: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.v50-gcard-status--已集運 {
+  color: #d48806;
+  background: #fffbe6;
+  border-color: #ffe58f;
+}
+
+.v50-gcard-status--已抵台 {
+  color: #d4380d;
+  background: #fff2e8;
+  border-color: #ffbb96;
+}
+
+.v50-gcard-status--已結束 {
+  color: #595959;
+  background: #f5f5f5;
+  border-color: #d9d9d9;
+}
+
+.v50-gcard-status-text {
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em;
+}
+
+.v50-gcard-status-text--已登記,
+.v50-gcard-status-text--待處理 {
+  color: #0958d9 !important;
+}
+
+.v50-gcard-status-text--已下單 {
+  color: #531dab !important;
+}
+
+.v50-gcard-status-text--官方已發貨 {
+  color: #389e0d !important;
+}
+
+.v50-gcard-status-text--已集運 {
+  color: #d48806 !important;
+}
+
+.v50-gcard-status-text--已抵台 {
+  color: #d4380d !important;
+}
+
+.v50-gcard-status-text--已結束 {
+  color: #595959 !important;
+}
+
+.v50-gcard-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.v50-gcard-edit {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.v50-gcard-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: auto;
+  padding: 0.15rem 0.2rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.v50-gcard-edit-btn:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+  filter: none;
+}
+
+.v50-gcard-delete {
+  border: none;
+  background: transparent;
+  color: #c2410c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.v50-gcard-delete:hover {
+  color: #9a3412;
+}
+
+.v50-gcard-body {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0.65rem 0.85rem 0.85rem;
+  cursor: pointer;
+}
+
+.v50-gcard-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #2f4568;
+  letter-spacing: -0.02em;
+}
+
+.v50-gcard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem 0.75rem;
+}
+
+.v50-gcard-field-wide {
+  grid-column: 1 / -1;
+}
+
+.v50-gcard-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #8fa3be;
+  margin-bottom: 0.15rem;
+}
+
+.v50-gcard-value {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+  word-break: break-all;
+}
+
+.v50-gcard-link {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #3b6ea8;
+  word-break: break-all;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.v50-gcard-link:hover {
+  color: #2f4568;
+}
+
+.v50-gcard-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #5b7fb5;
+}
+
+.v50-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.v50-order-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(145, 202, 255, 0.55);
+  background: linear-gradient(180deg, #f7fbff 0%, #eef6fc 100%);
+}
+
+.v50-order-totals-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.v50-order-totals-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8fa3be;
+}
+
+.v50-order-totals-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #3b6ea8;
+  letter-spacing: -0.02em;
+}
+
+.v50-order-totals-meta {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5b7fb5;
+}
+
+.v50-order-totals-meta-group {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1.1rem;
+}
+
+.v50-order-totals-meta--ship {
+  color: #7c6bb0;
+}
+
+.v50-group-cost-panel {
+  width: 100%;
+  padding: 0.45rem 0.85rem 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(135, 208, 200, 0.65);
+  background: linear-gradient(180deg, #f5fbf9 0%, #eef7f4 100%);
+}
+
+.v50-group-cost-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(120, 180, 170, 0.28);
+}
+
+.v50-group-cost-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.v50-group-cost-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.3rem 0.55rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dashed rgba(120, 180, 170, 0.28);
+}
+
+.v50-group-cost-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.v50-group-cost-row-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+  width: 2.75rem;
+  padding-bottom: 0.15rem;
+}
+
+.v50-group-cost-row-index {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #5a9a8c;
+  white-space: nowrap;
+}
+
+.v50-group-cost-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.15rem;
+  border-radius: 0.35rem;
+}
+
+.v50-group-cost-remove:hover {
+  color: #be123c;
+  background: rgba(225, 29, 72, 0.08);
+}
+
+.v50-group-cost-head {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.v50-group-cost-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #4a8578;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+.v50-group-cost-hint {
+  margin: 0.05rem 0 0;
+  font-size: 0.68rem;
+  color: #7a9e94;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.v50-group-cost-fields {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.3rem 0.55rem;
+  min-width: 0;
+}
+
+.v50-group-cost-field--weight .v50-group-cost-input-wrap {
+  min-width: 7.25rem;
+  flex-shrink: 0;
+}
+
+.v50-group-cost-field--weight .v50-group-cost-input {
+  flex: 1 1 auto;
+  min-width: 6.25rem;
+  width: 6.25rem;
+  max-width: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.v50-group-cost-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.v50-group-cost-field--amount {
+  flex-shrink: 0;
+}
+
+.v50-group-cost-field--amount .v50-group-cost-input-wrap {
+  min-width: 9rem;
+  flex-shrink: 0;
+}
+
+.v50-group-cost-field--amount .v50-group-cost-input {
+  flex: 1 1 auto;
+  min-width: 7.25rem;
+  width: 7.25rem;
+  max-width: none;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.v50-group-cost-field--amount .v50-group-cost-input::-webkit-outer-spin-button,
+.v50-group-cost-field--amount .v50-group-cost-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.v50-group-cost-field--amount .v50-group-cost-input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.v50-group-cost-field--amount-total .v50-group-cost-input-wrap {
+  min-width: 9.5rem;
+  flex-shrink: 0;
+}
+
+.v50-group-cost-field--logistics {
+  flex-shrink: 0;
+}
+
+.v50-group-cost-field--logistics .v50-group-cost-input-wrap {
+  min-width: 14.5rem;
+  flex-shrink: 0;
+}
+
+.v50-group-cost-field--logistics .v50-group-cost-input {
+  flex: 1 1 auto;
+  min-width: 13.5rem;
+  width: 13.5rem;
+  max-width: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.v50-group-cost-field--wide {
+  width: auto;
+  flex: 0 0 auto;
+  max-width: none;
+}
+
+.v50-group-cost-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7a9e94;
+  line-height: 1.2;
+}
+
+.v50-group-cost-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  min-height: 2rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(148, 180, 172, 0.45);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.v50-group-cost-prefix {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #5a9a8c;
+  flex-shrink: 0;
+}
+
+.v50-group-cost-input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #3d6b63;
+  outline: none;
+}
+
+.v50-group-cost-input::placeholder {
+  color: #a3bbb4;
+  font-weight: 500;
+}
+
+.v50-group-cost-input-wrap--readonly {
+  background: rgba(238, 247, 244, 0.9);
+}
+
+.v50-group-cost-readonly {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #3d6b63;
+  font-variant-numeric: tabular-nums;
+}
+
+.v50-group-cost-input-wrap--text {
+  padding-left: 0.55rem;
+}
+
+.v50-group-cost-input--text {
+  font-weight: 600;
+}
+
+.v50-group-cost-field--weight {
+  flex-shrink: 0;
+}
+
+.v50-group-cost-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(17, 94, 89, 0.18);
+}
+
+.v50-group-cost-actions {
+  flex: 0 0 auto;
+  margin-top: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* 手機／後台手機預覽：依可輸入位數數調整欄寬（偏寬以利輸入） */
+@media (max-width: 719.98px) {
+  .v50-group-cost-fields {
+    gap: 0.35rem 0.45rem;
+  }
+
+  .v50-group-cost-field--digits6 .v50-group-cost-input-wrap {
+    min-width: 0;
+    width: calc(9.5ch + 2rem);
+    max-width: calc(9.5ch + 2rem);
+  }
+
+  .v50-group-cost-field--digits6 .v50-group-cost-input {
+    width: 9.5ch;
+    min-width: 9.5ch;
+    max-width: 9.5ch;
+  }
+
+  .v50-group-cost-field--digits4 .v50-group-cost-input-wrap {
+    min-width: 0;
+    width: calc(7ch + 2rem);
+    max-width: calc(7ch + 2rem);
+  }
+
+  .v50-group-cost-field--digits4 .v50-group-cost-input {
+    width: 7ch;
+    min-width: 7ch;
+    max-width: 7ch;
+  }
+
+  .v50-group-cost-field--amount-total .v50-group-cost-input-wrap {
+    min-width: 0;
+    width: calc(9.5ch + 2rem);
+    max-width: calc(9.5ch + 2rem);
+  }
+
+  .v50-group-cost-field--logistics .v50-group-cost-input-wrap {
+    min-width: 0;
+    width: calc(15ch + 1.1rem);
+    max-width: min(100%, calc(15ch + 1.1rem));
+  }
+
+  .v50-group-cost-field--logistics .v50-group-cost-input {
+    width: 15ch;
+    min-width: 10ch;
+    max-width: 15ch;
+  }
+
+  .v50-group-cost-field--weight .v50-group-cost-input-wrap {
+    min-width: 0;
+    width: calc(7ch + 1.35rem);
+    max-width: calc(7ch + 1.35rem);
+  }
+
+  .v50-group-cost-field--weight .v50-group-cost-input {
+    width: 7ch;
+    min-width: 7ch;
+    max-width: 7ch;
+  }
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-fields {
+  gap: 0.35rem 0.45rem;
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--digits6 .v50-group-cost-input-wrap {
+  min-width: 0;
+  width: calc(9.5ch + 2rem);
+  max-width: calc(9.5ch + 2rem);
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--digits6 .v50-group-cost-input {
+  width: 9.5ch;
+  min-width: 9.5ch;
+  max-width: 9.5ch;
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--digits4 .v50-group-cost-input-wrap {
+  min-width: 0;
+  width: calc(7ch + 2rem);
+  max-width: calc(7ch + 2rem);
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--digits4 .v50-group-cost-input {
+  width: 7ch;
+  min-width: 7ch;
+  max-width: 7ch;
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--amount-total .v50-group-cost-input-wrap {
+  min-width: 0;
+  width: calc(9.5ch + 2rem);
+  max-width: calc(9.5ch + 2rem);
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--logistics .v50-group-cost-input-wrap {
+  min-width: 0;
+  width: calc(15ch + 1.1rem);
+  max-width: min(100%, calc(15ch + 1.1rem));
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--logistics .v50-group-cost-input {
+  width: 15ch;
+  min-width: 10ch;
+  max-width: 15ch;
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--weight .v50-group-cost-input-wrap {
+  min-width: 0;
+  width: calc(7ch + 1.35rem);
+  max-width: calc(7ch + 1.35rem);
+}
+
+html[data-admin-view='mobile'] .v50-group-cost-field--weight .v50-group-cost-input {
+  width: 7ch;
+  min-width: 7ch;
+  max-width: 7ch;
+}
+
+.v50-acct-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+
+.v50-acct-search {
+  width: 100%;
+  margin-bottom: 0.85rem;
+}
+
+.v50-acct-card-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.v50-acct-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.v50-acct-card:hover {
+  border-color: rgba(91, 127, 181, 0.45);
+  box-shadow: 0 6px 20px rgba(91, 127, 181, 0.12);
+}
+
+.v50-acct-copy {
+  width: 100%;
+  border: 1px solid rgba(91, 127, 181, 0.28);
+  border-radius: 0.75rem;
+  background: rgba(91, 127, 181, 0.08);
+  color: #3b6ea8;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.v50-acct-copy:hover {
+  background: rgba(91, 127, 181, 0.14);
+  border-color: rgba(91, 127, 181, 0.45);
+}
+
+.v50-acct-copy--inline {
+  width: auto;
+}
+
+.v50-pay-report-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  border-radius: 0.65rem;
+  background: rgba(220, 38, 38, 0.06);
+  color: #b91c1c;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 0.4rem 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.v50-pay-report-delete:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.12);
+}
+
+.v50-pay-report-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v50-pay-report-copy-wrap {
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(91, 127, 181, 0.28);
+  background: rgba(91, 127, 181, 0.05);
+  padding: 0.65rem 0.75rem;
+}
+
+.v50-pay-report-copy-text {
+  margin: 0.45rem 0 0;
+  font-family: inherit;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.v50-pay-report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.v50-pay-report-tab {
+  border: 1px solid rgba(91, 127, 181, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.v50-pay-report-tab.is-active {
+  background: rgba(91, 127, 181, 0.14);
+  border-color: rgba(91, 127, 181, 0.45);
+  color: #2f4568;
+}
+
+.v50-pay-report-tab-count {
+  font-weight: 700;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.v50-acct-card strong {
+  font-size: 1rem;
+  color: #2f4568;
+}
+
+.v50-acct-live {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #5b7fb5;
+}
+
+.v50-bill-card {
+  max-width: 30rem;
+}
+
+.v50-bill-block {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px dashed rgba(176, 190, 210, 0.45);
+}
+
+.v50-bill-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #2f4568;
+  margin-bottom: 0.35rem;
+}
+
+.v50-bill-items {
+  margin: 0.35rem 0 0.65rem 1rem;
+  padding: 0;
+  list-style: disc;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.v50-bill-total {
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(91, 127, 181, 0.22);
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #2f4568;
+}
+
+.v50-bill-remit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+@media (max-width: 480px) {
+  .v50-bill-remit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.v50-group-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.v50-group-toolbar .gb-search,
+.v50-group-toolbar .heina-input {
+  flex: 1;
+  min-width: 12rem;
+  margin-bottom: 0;
+}
+
+.v50-group-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.v50-group-sort-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #e8eef7;
+  white-space: nowrap;
+}
+
+.v50-group-sort-select {
+  min-width: 8.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(30, 41, 59, 0.72);
+  color: #f8fafc;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* —— 團務管理頁：等寬分離的狀態按鈕卡 —— */
+.v50-group-ops-page .v50-status-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 1rem;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+  background: transparent;
+}
+
+.v50-group-ops-page .v50-status-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 0;
+  width: 100%;
+  padding: 0.62rem 0.35rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: clamp(0.6875rem, 1.05vw, 0.8125rem);
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(30, 41, 59, 0.05);
+  transition: box-shadow 0.15s ease, outline 0.15s ease, border-color 0.15s ease;
+}
+
+.v50-group-ops-page .v50-status-tab-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-width: 0;
+}
+
+.v50-group-ops-page .v50-status-tab-name,
+.v50-group-ops-page .v50-status-tab-count {
+  flex-shrink: 0;
+}
+
+.v50-group-ops-page .v50-status-tab-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+}
+
+/* 手機版：獨立圓角按鈕、依內容寬度換行（桌機維持上方 grid 不變） */
+.v50-group-ops-page .v50-status-tabs.v50-status-tabs--stack,
+html[data-admin-view='mobile'] .v50-group-ops-page .v50-status-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  grid-template-columns: unset;
+}
+
+.v50-group-ops-page .v50-status-tabs.v50-status-tabs--stack .v50-status-tab,
+html[data-admin-view='mobile'] .v50-group-ops-page .v50-status-tab {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: auto;
+  max-width: 100%;
+  justify-content: flex-start;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.v50-group-ops-page .v50-status-tabs.v50-status-tabs--stack .v50-status-tab-label,
+html[data-admin-view='mobile'] .v50-group-ops-page .v50-status-tab-label {
+  min-width: auto;
+  flex-shrink: 0;
+}
+
+.v50-group-ops-page .v50-status-tabs.v50-status-tabs--stack .v50-status-tab-name,
+.v50-group-ops-page .v50-status-tabs.v50-status-tabs--stack .v50-status-tab-count,
+html[data-admin-view='mobile'] .v50-group-ops-page .v50-status-tab-name,
+html[data-admin-view='mobile'] .v50-group-ops-page .v50-status-tab-count {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+@media (max-width: 767.98px) {
+  html:not([data-admin-view='desktop']) .v50-group-ops-page .v50-status-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    grid-template-columns: unset;
+  }
+
+  html:not([data-admin-view='desktop']) .v50-group-ops-page .v50-status-tab {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: auto;
+    max-width: 100%;
+    justify-content: flex-start;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  html:not([data-admin-view='desktop']) .v50-group-ops-page .v50-status-tab-label {
+    min-width: auto;
+    flex-shrink: 0;
+  }
+
+  html:not([data-admin-view='desktop']) .v50-group-ops-page .v50-status-tab-name,
+  html:not([data-admin-view='desktop']) .v50-group-ops-page .v50-status-tab-count {
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+.v50-group-ops-page .v50-status-tab--已登記 {
+  background: #e6f7ff;
+  color: #0958d9;
+  border-color: #91caff;
+}
+
+.v50-group-ops-page .v50-status-tab--已下單 {
+  background: #f9f0ff;
+  color: #531dab;
+  border-color: #d3adf7;
+}
+
+.v50-group-ops-page .v50-status-tab--官方已發貨 {
+  background: #f6ffed;
+  color: #389e0d;
+  border-color: #b7eb8f;
+}
+
+.v50-group-ops-page .v50-status-tab--已集運 {
+  background: #fffbe6;
+  color: #d48806;
+  border-color: #ffe58f;
+}
+
+.v50-group-ops-page .v50-status-tab--已抵台 {
+  background: #fff2e8;
+  color: #d4380d;
+  border-color: #ffbb96;
+}
+
+.v50-group-ops-page .v50-status-tab--已結束 {
+  background: #f5f5f5;
+  color: #595959;
+  border-color: #d9d9d9;
+}
+
+.v50-group-ops-page .v50-status-tab.is-active {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(30, 41, 59, 0.1);
+}
+
+.v50-group-ops-page .v50-status-tab--已登記.is-active {
+  border-color: #4096ff;
+  outline: 2px solid #4096ff;
+  outline-offset: 0;
+}
+
+.v50-group-ops-page .v50-status-tab--已下單.is-active {
+  border-color: #9254de;
+  outline: 2px solid #9254de;
+  outline-offset: 0;
+}
+
+.v50-group-ops-page .v50-status-tab--官方已發貨.is-active {
+  border-color: #73d13d;
+  outline: 2px solid #73d13d;
+  outline-offset: 0;
+}
+
+.v50-group-ops-page .v50-status-tab--已集運.is-active {
+  border-color: #ffc53d;
+  outline: 2px solid #ffc53d;
+  outline-offset: 0;
+}
+
+.v50-group-ops-page .v50-status-tab--已抵台.is-active {
+  border-color: #ff7a45;
+  outline: 2px solid #ff7a45;
+  outline-offset: 0;
+}
+
+.v50-group-ops-page .v50-status-tab--已結束.is-active {
+  border-color: #8c8c8c;
+  outline: 2px solid #8c8c8c;
+  outline-offset: 0;
+}
+
+.v50-group-ops-page .v50-group-sort-label {
+  color: #64748b;
+}
+
+.v50-group-ops-page .v50-group-sort-select {
+  background: #fff;
+  border-color: #dbe3ef;
+  color: #1e293b;
+}
+
+.v50-group-ops-page .v50-group-toolbar .heina-input,
+.v50-group-ops-page .v50-group-toolbar .gb-search {
+  background: #fff;
+  border-color: #dbe3ef;
+  color: #1e293b;
+}
+
+.v50-back-to-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.7rem 1.2rem;
+  border: 1px solid #9eb8d0;
+  border-radius: 0.75rem;
+  background: linear-gradient(180deg, #dce8f4 0%, #cdddf0 100%);
+  color: #1a4a6e;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(26, 74, 110, 0.1);
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.v50-back-to-list:hover {
+  background: linear-gradient(180deg, #cdddf0 0%, #b8cce0 100%);
+  border-color: #7ea8c8;
+  box-shadow: 0 4px 12px rgba(26, 74, 110, 0.14);
+}
+
+.v50-group-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.v50-group-detail-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.3;
+  min-width: 0;
+}

@@ -1,0 +1,497 @@
+import * as XLSX from 'xlsx'
+import type { GroupBuyGroup, GroupBuyItem, GroupBuyOrder } from '../../api/types'
+import {
+  calcItemsTotalTwd,
+  calcOrderBalance,
+  normalizeGroupStatus,
+  suggestDeposit,
+} from './v50Utils'
+
+const EXPORT_HEADERS = [
+  '訂單ID',
+  '名字',
+  '商品',
+  '數量',
+  '日幣單價',
+  '日幣總額',
+  '台幣單價',
+  '台幣小計',
+  '國內運費',
+  '國際運費',
+] as const
+
+function itemLineTwd(item: { twd: number; qty: number }): number {
+  return (Number(item.twd) || 0) * (Number(item.qty) || 1)
+}
+
+function itemLineJpy(item: { jpy: number; qty: number }): number {
+  return (Number(item.jpy) || 0) * (Number(item.qty) || 1)
+}
+
+function norm(s: string) {
+  return String(s).replace(/\s/g, '').toLowerCase()
+}
+
+function pick(row: Record<string, unknown>, ...candidates: string[]): string {
+  const keys = Object.keys(row)
+  const idx = new Map<string, string>()
+  for (const k of keys) idx.set(norm(k), k)
+  for (const c of candidates) {
+    const k = idx.get(norm(c))
+    if (k != null && row[k] != null && String(row[k]).trim() !== '') return String(row[k]).trim()
+  }
+  return ''
+}
+
+function numCell(row: Record<string, unknown>, ...candidates: string[]): number {
+  const s = pick(row, ...candidates)
+  if (!s) {
+    for (const c of candidates) {
+      const k = Object.keys(row).find((x) => norm(x) === norm(c))
+      if (k != null && typeof row[k] === 'number') return row[k] as number
+    }
+    return 0
+  }
+  const n = Number(String(s).replace(/,/g, ''))
+  return Number.isFinite(n) ? n : 0
+}
+
+function isHeaderRow(row: Record<string, unknown>): boolean {
+  const id = pick(row, '訂單ID', 'orderId')
+  const n = pick(row, '名字', '姓名', '客戶名字')
+  const p = pick(row, '商品', '品名', '品項', '商品品項')
+  if (id === '訂單ID' || id === 'orderId') return true
+  if (n === '名字' || n === '姓名' || n === '客戶名字') return true
+  if (p === '商品' || p === '品項' || p === '商品品項') return true
+  return false
+}
+
+export type V50ImportBlock = {
+  orderId: string
+  customerName: string
+  items: GroupBuyItem[]
+  domesticShip: number
+  intlShip: number
+}
+
+export type V50ImportParseResult = {
+  blocks: V50ImportBlock[]
+  warnings: string[]
+  sheetName: string
+}
+
+export function exportV50GroupsToXlsx(groups: GroupBuyGroup[], filename?: string) {
+  const wb = XLSX.utils.book_new()
+  const ts = new Date().toISOString().slice(0, 10)
+
+  for (const group of groups) {
+    const rows: (string | number)[][] = [[...EXPORT_HEADERS]]
+    for (const order of group.orders || []) {
+      const items = order.items || []
+      if (!items.length) continue
+      items.forEach((item, idx) => {
+        rows.push([
+          idx === 0 ? order.id : '',
+          idx === 0 ? order.customerName : '',
+          item.name,
+          item.qty,
+          item.jpy,
+          itemLineJpy(item),
+          item.twd,
+          itemLineTwd(item),
+          idx === 0 ? order.domesticShip || 0 : '',
+          idx === 0 ? order.intlShip || 0 : '',
+        ])
+      })
+    }
+    const rawName = String(group.name || '團務').trim() || '團務'
+    let sheetName = rawName.slice(0, 31).replace(/[\\/*?:\[\]]/g, '_')
+    if (!sheetName) sheetName = '團務'
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), sheetName)
+  }
+
+  const name =
+    filename ??
+    `團務客訂-${ts}${groups.length === 1 ? `-${String(groups[0].name || '').slice(0, 12)}` : ''}.xlsx`
+  XLSX.writeFile(wb, name.replace(/[\\/*?:\[\]]/g, '_'))
+}
+
+const FULL_BACKUP_META_HEADERS = [
+  '團務名稱',
+  '結單日',
+  '購買日',
+  '官方出貨日',
+  '信用卡資訊',
+  '訂單編號',
+  '物流編號',
+  '團務狀態',
+] as const
+
+const FULL_BACKUP_DETAIL_HEADERS = [
+  '客戶名字',
+  '訂單ID',
+  '品名',
+  '數量',
+  '日幣單價',
+  '日幣總額',
+  '台幣售價',
+  '訂金',
+  '國內運費',
+  '國際運費',
+  '尾款',
+  '支付備註',
+] as const
+
+function sheetNameFromGroup(group: GroupBuyGroup): string {
+  const rawName = String(group.name || '團務').trim() || '團務'
+  let sheetName = rawName.slice(0, 31).replace(/[\\/*?:\[\]]/g, '_')
+  if (!sheetName) sheetName = '團務'
+  return sheetName
+}
+
+/** 完整團務備份：每團一工作表，含團務主檔與客訂明細（僅備份用，不提供匯入） */
+export function exportV50GroupsFullBackupXlsx(groups: GroupBuyGroup[], filename?: string) {
+  const wb = XLSX.utils.book_new()
+  const ts = new Date().toISOString().slice(0, 10)
+  const usedSheetNames = new Set<string>()
+
+  for (const group of groups) {
+    let sheetName = sheetNameFromGroup(group)
+    if (usedSheetNames.has(sheetName)) {
+      let n = 2
+      while (usedSheetNames.has(`${sheetName.slice(0, 28)}_${n}`)) n += 1
+      sheetName = `${sheetName.slice(0, 28)}_${n}`
+    }
+    usedSheetNames.add(sheetName)
+
+    const rows: (string | number)[][] = []
+    rows.push([...FULL_BACKUP_META_HEADERS])
+    rows.push([
+      group.name,
+      group.closingDate || '',
+      group.purchaseDate || '',
+      group.officialShipDate || '',
+      group.creditCard || '',
+      group.orderId || '',
+      group.logisticsId || '',
+      normalizeGroupStatus(group.status),
+    ])
+    rows.push([])
+    rows.push([...FULL_BACKUP_DETAIL_HEADERS])
+
+    for (const order of group.orders || []) {
+      const items = order.items || []
+      if (!items.length) {
+        rows.push([
+          order.customerName,
+          order.id,
+          '',
+          '',
+          '',
+          '',
+          '',
+          order.deposit ?? 0,
+          order.domesticShip ?? 0,
+          order.intlShip ?? 0,
+          order.balance ?? 0,
+          order.paymentInfo || '',
+        ])
+        continue
+      }
+      items.forEach((item, idx) => {
+        rows.push([
+          idx === 0 ? order.customerName : '',
+          idx === 0 ? order.id : '',
+          item.name,
+          item.qty,
+          item.jpy,
+          itemLineJpy(item),
+          itemLineTwd(item),
+          idx === 0 ? order.deposit ?? 0 : '',
+          idx === 0 ? order.domesticShip ?? 0 : '',
+          idx === 0 ? order.intlShip ?? 0 : '',
+          idx === 0 ? order.balance ?? 0 : '',
+          idx === 0 ? order.paymentInfo || '' : '',
+        ])
+      })
+    }
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), sheetName)
+  }
+
+  const name = filename ?? `團務完整備份-${ts}.xlsx`
+  XLSX.writeFile(wb, name.replace(/[\\/*?:\[\]]/g, '_'))
+}
+
+/** 團務客訂匯入範本（與匯出欄位一致） */
+export function downloadV50OrderTemplateXlsx() {
+  const wb = XLSX.utils.book_new()
+  const headers: (string | number)[][] = [
+    [...EXPORT_HEADERS],
+    ['', '範例客人', '範例商品A', 1, 1999, 1999, 590, 590, 0, 0],
+    ['', '', '範例商品B', 2, 999, 1998, 125, 250, '', ''],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(headers), '登記表')
+  const note: (string | number)[][] = [
+    ['匯入說明'],
+    ['1. 同一客訂：第一列填訂單ID、名字、運費；第二列起品項續填，名字與訂單ID請留空。'],
+    ['2. 若每列都重複填名字，會被誤判成多筆客訂；續列品項請勿再填名字。'],
+    ['3. 台幣單價=每件；台幣小計=單價×數量。日幣總額=日幣單價×數量（匯出用，匯入可略）。'],
+    ['4. 匯入可只填台幣小計或日幣總額，系統會除以數量得單價。'],
+    ['5. 訂金、尾款由系統計算；更新既有客訂請填訂單ID。'],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(note), '說明')
+  XLSX.writeFile(wb, '團務客訂匯入範本.xlsx')
+}
+
+function sheetToRowRecords(ws: XLSX.WorkSheet): Record<string, unknown>[] {
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' })
+  if (!aoa.length) return []
+  const headerCells = (aoa[0] ?? []).map((c) => String(c ?? '').trim())
+  const rows: Record<string, unknown>[] = []
+  for (let i = 1; i < aoa.length; i++) {
+    const line = aoa[i] ?? []
+    const row: Record<string, unknown> = {}
+    let hasValue = false
+    for (let j = 0; j < headerCells.length; j++) {
+      const key = headerCells[j]
+      if (!key) continue
+      const val = line[j] ?? ''
+      if (val !== '' && val != null) hasValue = true
+      row[key] = val
+    }
+    if (hasValue) rows.push(row)
+  }
+  return rows
+}
+
+function shouldStartNewImportBlock(
+  cur: V50ImportBlock | null,
+  orderId: string,
+  name: string,
+): boolean {
+  if (orderId.trim()) return true
+  if (!name.trim()) return false
+  if (!cur) return true
+  if (!cur.customerName.trim()) return true
+  return norm(name) !== norm(cur.customerName)
+}
+
+function parseRowsToBlocks(rows: Record<string, unknown>[]): V50ImportParseResult {
+  const warnings: string[] = []
+  if (!rows.length) return { blocks: [], warnings: ['沒有任何列'], sheetName: '' }
+
+  let start = 0
+  if (isHeaderRow(rows[0])) start = 1
+
+  const blocks: V50ImportBlock[] = []
+  let cur: V50ImportBlock | null = null
+
+  const flush = () => {
+    if (cur && cur.items.length) blocks.push(cur)
+    cur = null
+  }
+
+  for (let i = start; i < rows.length; i++) {
+    const row = rows[i]
+    const orderId = pick(row, '訂單ID', 'orderId')
+    const name = pick(row, '名字', '姓名', '客戶名字', '暱稱')
+    const product = pick(row, '商品', '品名', '品項', '商品品項')
+    const qtyHint = numCell(row, '數量', 'qty')
+    const jpyUnit = numCell(row, '日幣單價', '日幣', 'jpy', '單價')
+    const jpyLineTotal = numCell(row, '日幣總額', '日幣小計', '日幣金額')
+    const twdUnit = numCell(row, '台幣單價', '台幣售價', 'twd')
+    const lineMoney = numCell(row, '台幣小計', '金額', '台幣', '小計', '台幣金額')
+    const domesticShip = numCell(row, '國內運費', '國內運', '運費')
+    const intlShip = numCell(row, '國際運費', '國際運')
+
+    const empty =
+      !orderId &&
+      !name &&
+      !product &&
+      !qtyHint &&
+      !jpyUnit &&
+      !jpyLineTotal &&
+      !twdUnit &&
+      !lineMoney &&
+      !domesticShip &&
+      !intlShip
+    if (empty) continue
+
+    if (shouldStartNewImportBlock(cur, orderId, name)) {
+      flush()
+      cur = {
+        orderId: orderId.trim(),
+        customerName: name.trim(),
+        items: [],
+        domesticShip: domesticShip || 0,
+        intlShip: intlShip || 0,
+      }
+    } else if (!cur) {
+      if (product) warnings.push(`第 ${i + 1} 列：有商品「${product}」但上方尚無客戶，已略過`)
+      continue
+    }
+
+    if (orderId.trim() && !cur!.orderId) cur!.orderId = orderId.trim()
+    if (name.trim() && !cur!.customerName) cur!.customerName = name.trim()
+    if (domesticShip > 0) cur!.domesticShip = domesticShip
+    if (intlShip > 0) cur!.intlShip = intlShip
+
+    if (product) {
+      const qty = Math.max(1, qtyHint || 1)
+      let twd = twdUnit
+      if (!twd && lineMoney) twd = qty > 0 ? lineMoney / qty : lineMoney
+      let jpy = jpyUnit
+      if (!jpy && jpyLineTotal) jpy = qty > 0 ? jpyLineTotal / qty : jpyLineTotal
+      cur!.items.push({
+        name: product,
+        qty,
+        jpy: jpy || 0,
+        twd: twd || 0,
+      })
+    }
+  }
+  flush()
+
+  for (const b of blocks) {
+    if (!b.customerName.trim()) {
+      warnings.push(`訂單 ${b.orderId || '（無 ID）'}：缺少客戶名字，已略過`)
+    }
+  }
+
+  const valid = blocks.filter((b) => b.customerName.trim() && b.items.length)
+  return { blocks: valid, warnings, sheetName: '' }
+}
+
+export function parseV50ImportWorkbook(
+  ab: ArrayBuffer,
+  targetGroupName: string,
+): V50ImportParseResult {
+  const wb = XLSX.read(ab, { type: 'array' })
+  const sheetNames = wb.SheetNames || []
+  if (!sheetNames.length) return { blocks: [], warnings: ['檔案內沒有工作表'], sheetName: '' }
+
+  const targetNorm = norm(targetGroupName)
+  let sheetName =
+    sheetNames.find((n) => norm(n) === targetNorm) ??
+    sheetNames.find((n) => norm(n).includes(targetNorm) || targetNorm.includes(norm(n))) ??
+    sheetNames[0]
+
+  const ws = wb.Sheets[sheetName]
+  if (!ws) return { blocks: [], warnings: ['無法讀取工作表'], sheetName }
+
+  const rows = sheetToRowRecords(ws)
+  const parsed = parseRowsToBlocks(rows)
+  parsed.sheetName = sheetName
+  if (sheetNames.length > 1 && norm(sheetName) !== targetNorm) {
+    parsed.warnings.unshift(
+      `未找到與「${targetGroupName}」同名的工作表，已使用「${sheetName}」分頁`,
+    )
+  }
+  return parsed
+}
+
+function finalizeImportedOrder(
+  existing: GroupBuyOrder | null,
+  block: V50ImportBlock,
+  newId: () => string,
+): GroupBuyOrder | null {
+  if (!block.customerName.trim() || !block.items.length) return null
+
+  const items = block.items
+  const domesticShip = block.domesticShip
+  const intlShip = block.intlShip
+  const totalTwd = calcItemsTotalTwd(items)
+  const paymentStatus = existing?.paymentStatus ?? '未付款'
+  const paymentInfo = existing?.paymentInfo ?? ''
+
+  let deposit: number
+  if (paymentStatus === '貨到付款') deposit = 0
+  else if (paymentStatus === '已付款') deposit = totalTwd
+  else if (paymentStatus === '已付訂金' && existing) {
+    const prev = Number(existing.deposit) || 0
+    deposit = prev > 0 ? Math.min(prev, totalTwd) : suggestDeposit(totalTwd)
+  } else deposit = suggestDeposit(totalTwd)
+
+  return {
+    id: existing?.id ?? (block.orderId.trim() || newId()),
+    customerName: block.customerName.trim() || existing?.customerName || '',
+    items,
+    totalTwd,
+    deposit,
+    domesticShip,
+    intlShip,
+    balance: calcOrderBalance(totalTwd, deposit, domesticShip, intlShip),
+    paymentStatus,
+    paymentInfo,
+  }
+}
+
+export type V50ImportApplyResult = {
+  updated: number
+  added: number
+  skipped: number
+  warnings: string[]
+  orders: GroupBuyOrder[]
+}
+
+export function applyV50ImportToGroup(
+  group: GroupBuyGroup,
+  blocks: V50ImportBlock[],
+  newId: () => string,
+): V50ImportApplyResult {
+  const warnings: string[] = []
+  let updated = 0
+  let added = 0
+  let skipped = 0
+
+  const orders = [...(group.orders || [])]
+  const byId = new Map(orders.map((o) => [o.id, o]))
+  const byName = new Map<string, GroupBuyOrder[]>()
+  for (const o of orders) {
+    const key = norm(o.customerName)
+    const list = byName.get(key) ?? []
+    list.push(o)
+    byName.set(key, list)
+  }
+
+  for (const block of blocks) {
+    let existing: GroupBuyOrder | null = null
+    const oid = block.orderId.trim()
+    if (oid && byId.has(oid)) existing = byId.get(oid)!
+    else {
+      const key = norm(block.customerName)
+      const hits = byName.get(key)
+      if (hits?.length === 1) existing = hits[0]
+      else if (hits && hits.length > 1) {
+        warnings.push(
+          `「${block.customerName}」有多筆客訂，請在 Excel 填寫訂單ID 以指定要更新的訂單`,
+        )
+        skipped += 1
+        continue
+      }
+    }
+
+    const saved = finalizeImportedOrder(existing, block, newId)
+    if (!saved) {
+      skipped += 1
+      continue
+    }
+
+    if (existing) {
+      const idx = orders.findIndex((o) => o.id === existing!.id)
+      if (idx >= 0) orders[idx] = saved
+      updated += 1
+    } else {
+      orders.unshift(saved)
+      byId.set(saved.id, saved)
+      const key = norm(saved.customerName)
+      const list = byName.get(key) ?? []
+      list.push(saved)
+      byName.set(key, list)
+      added += 1
+    }
+  }
+
+  return { updated, added, skipped, warnings, orders }
+}

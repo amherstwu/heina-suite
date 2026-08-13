@@ -1,0 +1,217 @@
+@import 'tailwindcss';
+
+@custom-variant light (&:where(.theme-light, .theme-light *));
+
+/* ── 馬卡龍色系 tokens（預設淺色；深色由 useApplyVisualTheme 覆寫）── */
+@theme {
+  --font-sans: 'Inter', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
+
+  --color-ds-bg: #fff7f9;
+  --color-ds-surface: #fffbfc;
+  --color-ds-surface-raised: #ffffff;
+  --color-ds-card: #fffbfc;
+
+  --color-ds-primary: #e8a4b8;
+  --color-ds-secondary: #f5c6d0;
+  --color-ds-highlight: #ffe8ef;
+
+  --color-ds-success: #5cb896;
+  --color-ds-warning: #d4a060;
+  --color-ds-danger: #e87890;
+
+  --color-ds-text: #4a3f48;
+  --color-ds-text-secondary: #7a6a74;
+  --color-ds-text-muted: #a898a0;
+
+  --ds-chrome-border: rgba(200, 160, 180, 0.28);
+  --ds-chrome-border-faint: rgba(200, 160, 180, 0.16);
+  --ds-chrome-hover-bg: rgba(232, 164, 184, 0.12);
+  --ds-chrome-active-bg: rgba(232, 164, 184, 0.2);
+  --ds-chrome-inset-line: rgba(255, 252, 253, 0.9);
+  --ds-chrome-card-top: rgba(255, 232, 239, 0.95);
+
+  --text-page: 1.75rem;
+  --text-page--line-height: 1.22;
+  --text-section: 1.25rem;
+  --text-section--line-height: 1.32;
+  --text-card-title: 1rem;
+  --text-card-title--line-height: 1.45;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.55;
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1.4;
+}
+
+/* 微噪點（SVG turbulence） */
+@layer utilities {
+  .ds-app-bg {
+    background-color: var(--color-ds-bg);
+    background-image:
+      radial-gradient(ellipse 120% 70% at 0% 0%, color-mix(in srgb, var(--color-ds-primary) 18%, transparent), transparent 52%),
+      radial-gradient(ellipse 90% 55% at 100% 100%, color-mix(in srgb, var(--color-ds-secondary) 15%, transparent), transparent 48%),
+      radial-gradient(ellipse 60% 45% at 50% 40%, color-mix(in srgb, var(--color-ds-highlight) 7%, transparent), transparent 62%),
+      linear-gradient(180deg, var(--color-ds-bg) 0%, color-mix(in srgb, var(--color-ds-bg) 88%, #000) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    background-blend-mode: normal, normal, normal, normal, overlay;
+  }
+
+  .ds-card-elevated {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 10px 30px rgba(0, 0, 0, 0.5),
+      0 0 20px color-mix(in srgb, var(--color-ds-primary) 10%, transparent);
+  }
+
+  .ds-card-elevated-hover {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-ds-primary) 22%, transparent),
+      0 18px 48px rgba(0, 0, 0, 0.55),
+      0 0 32px color-mix(in srgb, var(--color-ds-primary) 16%, transparent);
+  }
+
+  html.theme-light .ds-app-bg {
+    background-image:
+      radial-gradient(ellipse 110% 65% at 0% 0%, color-mix(in srgb, var(--color-ds-primary) 8%, transparent), transparent 55%),
+      radial-gradient(ellipse 85% 50% at 100% 100%, color-mix(in srgb, var(--color-ds-secondary) 7%, transparent), transparent 50%),
+      radial-gradient(ellipse 55% 40% at 50% 35%, color-mix(in srgb, var(--color-ds-highlight) 6%, transparent), transparent 58%),
+      linear-gradient(180deg, var(--color-ds-bg) 0%, color-mix(in srgb, var(--color-ds-bg) 96%, #fff) 100%);
+    background-blend-mode: normal, normal, normal, normal;
+  }
+
+  html.theme-light .ds-card-elevated {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-ds-primary) 8%, transparent),
+      0 4px 20px rgba(30, 41, 59, 0.06),
+      0 12px 32px color-mix(in srgb, var(--color-ds-primary) 6%, transparent);
+  }
+
+  html.theme-light .ds-card-elevated-hover {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-ds-primary) 18%, transparent),
+      0 8px 28px rgba(30, 41, 59, 0.08),
+      0 0 24px color-mix(in srgb, var(--color-ds-primary) 10%, transparent);
+  }
+
+  .ds-glow-primary {
+    box-shadow: 0 0 24px color-mix(in srgb, var(--color-ds-primary) 18%, transparent);
+  }
+
+  html.theme-light .ds-glow-primary {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-ds-primary) 12%, transparent);
+  }
+
+  /** 手機橫向捲動表格／寬區塊，保留慣性捲動 */
+  .ds-scroll-x {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ds-pulse-danger {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(239, 68, 68, 0.35),
+      0 0 28px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(239, 68, 68, 0.55),
+      0 0 48px rgba(239, 68, 68, 0.38);
+  }
+}
+
+.animate-ds-pulse-danger {
+  animation: ds-pulse-danger 2.2s ease-in-out infinite;
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth font-sans text-body text-ds-text antialiased;
+    letter-spacing: -0.012em;
+  }
+
+  @media (max-width: 639.98px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  body {
+    @apply min-h-dvh;
+  }
+
+  button,
+  [role='button'],
+  summary,
+  a[href] {
+    touch-action: manipulation;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-ds-primary) 42%, transparent);
+    color: var(--color-ds-text);
+  }
+
+  input:where(
+      [type='text'],
+      [type='search'],
+      [type='email'],
+      [type='password'],
+      [type='number'],
+      [type='tel'],
+      [type='url'],
+      [type='date'],
+      [type='datetime-local']
+    ),
+  textarea,
+  select {
+    @apply rounded-xl border bg-ds-surface-raised/90 px-3 py-2.5 text-body text-ds-text outline-none transition duration-200 placeholder:text-ds-text-muted;
+    border-color: var(--ds-chrome-border);
+  }
+
+  html.theme-light input:where(
+      [type='text'],
+      [type='search'],
+      [type='email'],
+      [type='password'],
+      [type='number'],
+      [type='tel'],
+      [type='url'],
+      [type='date'],
+      [type='datetime-local']
+    ),
+  html.theme-light textarea,
+  html.theme-light select {
+    background: color-mix(in srgb, var(--color-ds-surface) 96%, var(--color-ds-primary) 4%);
+  }
+
+  input:where(
+      [type='text'],
+      [type='search'],
+      [type='email'],
+      [type='password'],
+      [type='number'],
+      [type='tel'],
+      [type='url'],
+      [type='date'],
+      [type='datetime-local']
+    ):focus,
+  textarea:focus,
+  select:focus {
+    border-color: color-mix(in srgb, var(--color-ds-primary) 55%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-ds-highlight) 14%, transparent),
+      0 0 22px color-mix(in srgb, var(--color-ds-primary) 22%, transparent);
+  }
+}

@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+gas-web/
+*.local
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*credentials*
+*.secret
+
+# Logs & caches
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.cache/
+.turbo/
+*.tsbuildinfo
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test / debug dumps
+_enc_report.txt
+_hist_sample.txt
+*.corrupted.bak
+
+# Optional: keep deploy bundle instructions but ignore huge generated HTML if needed
+# (deploy/apps-script-bundle is useful for paste-deploy — keep tracked)
+
+# Scratch / legacy
+_mock_compare.txt
+_types_proc_patch.txt
+UI.html

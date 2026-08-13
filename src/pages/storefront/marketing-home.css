@@ -1,0 +1,515 @@
+/* Heina Shop 行銷首頁 */
+.mkt-page {
+  --mkt-bg: #0c0e1a;
+  --mkt-surface: rgba(255, 255, 255, 0.04);
+  --mkt-border: rgba(255, 255, 255, 0.1);
+  --mkt-pink: #f472b6;
+  --mkt-teal: #2dd4bf;
+  --mkt-gold: #fde68a;
+  --mkt-violet: #a78bfa;
+  overflow-x: hidden;
+}
+
+.mkt-hero {
+  position: relative;
+  padding: 3.5rem 1.25rem 4rem;
+  text-align: center;
+}
+@media (min-width: 1024px) {
+  .mkt-hero {
+    padding: 5rem 2rem 6rem;
+    text-align: left;
+  }
+  .mkt-hero-inner {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 3rem;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+.mkt-hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.mkt-hero-glow::before,
+.mkt-hero-glow::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+}
+.mkt-hero-glow::before {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  left: -80px;
+  background: radial-gradient(circle, var(--mkt-pink), transparent 70%);
+}
+.mkt-hero-glow::after {
+  width: 380px;
+  height: 380px;
+  top: 20%;
+  right: -100px;
+  background: radial-gradient(circle, var(--mkt-teal), transparent 70%);
+}
+
+.mkt-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mkt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mkt-teal);
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+.mkt-hero h1 {
+  margin: 1.25rem 0 0;
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+.mkt-hero h1 span {
+  display: block;
+  background: linear-gradient(120deg, #fff 0%, var(--mkt-gold) 45%, var(--mkt-pink) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.mkt-hero-lead {
+  margin: 1.25rem auto 0;
+  max-width: 32rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(226, 232, 240, 0.78);
+}
+@media (min-width: 1024px) {
+  .mkt-hero-lead {
+    margin-left: 0;
+    max-width: 28rem;
+  }
+}
+
+.mkt-cta-row {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+@media (min-width: 1024px) {
+  .mkt-cta-row {
+    justify-content: flex-start;
+  }
+}
+
+.mkt-btn-glow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-decoration: none;
+  color: #1e1b4b;
+  background: linear-gradient(135deg, var(--mkt-gold), #fbbf24);
+  box-shadow: 0 0 40px rgba(253, 230, 138, 0.25), 0 12px 32px rgba(0, 0, 0, 0.35);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mkt-btn-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 50px rgba(253, 230, 138, 0.35), 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.mkt-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.35rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--mkt-border);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s;
+}
+.mkt-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(167, 139, 250, 0.5);
+}
+
+.mkt-hero-visual {
+  display: none;
+  position: relative;
+}
+@media (min-width: 1024px) {
+  .mkt-hero-visual {
+    display: block;
+  }
+}
+
+.mkt-hero-photo {
+  width: 100%;
+  display: block;
+  border-radius: 1.25rem;
+  border: 1px solid var(--mkt-border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 1rem;
+}
+
+.mkt-bento-photo {
+  display: block;
+  width: calc(100% + 2px);
+  height: 7rem;
+  margin: -1px -1px 0.75rem;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 0.85rem 0.85rem 0 0;
+}
+.mkt-bento-card.tall .mkt-bento-photo {
+  height: 10rem;
+}
+
+.mkt-hero-card-stack {
+  position: relative;
+  min-height: 340px;
+}
+
+.mkt-float-card {
+  position: absolute;
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.35rem;
+  background: rgba(22, 25, 48, 0.85);
+  border: 1px solid var(--mkt-border);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.mkt-float-card.a {
+  top: 0;
+  right: 0;
+  width: 72%;
+  transform: rotate(2deg);
+}
+.mkt-float-card.b {
+  bottom: 12%;
+  left: 0;
+  width: 68%;
+  transform: rotate(-3deg);
+  border-color: rgba(244, 114, 182, 0.35);
+}
+.mkt-float-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+.mkt-float-card p {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(226, 232, 240, 0.65);
+}
+.mkt-float-stat {
+  margin-top: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--mkt-teal);
+}
+
+.mkt-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  max-width: 1200px;
+  margin: -1.5rem auto 0;
+  padding: 0 1.25rem 3rem;
+  position: relative;
+  z-index: 2;
+}
+@media (min-width: 768px) {
+  .mkt-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+.mkt-stat {
+  text-align: center;
+  padding: 1.1rem 0.75rem;
+  border-radius: 1rem;
+  background: var(--mkt-surface);
+  border: 1px solid var(--mkt-border);
+}
+.mkt-stat strong {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+}
+.mkt-stat span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(148, 163, 184, 0.9);
+  letter-spacing: 0.04em;
+}
+
+.mkt-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+}
+
+.mkt-section-head {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.mkt-section-head h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 900;
+  color: #fff;
+}
+.mkt-section-head p {
+  margin: 0.65rem auto 0;
+  max-width: 36rem;
+  font-size: 0.95rem;
+  color: rgba(148, 163, 184, 0.95);
+  line-height: 1.6;
+}
+
+.mkt-bento {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .mkt-bento {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+  }
+  .mkt-bento .wide {
+    grid-column: span 2;
+  }
+  .mkt-bento .tall {
+    grid-row: span 2;
+  }
+}
+
+.mkt-bento-card {
+  border-radius: 1.35rem;
+  padding: 1.5rem;
+  border: 1px solid var(--mkt-border);
+  background: var(--mkt-surface);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s;
+}
+.mkt-bento-card:hover {
+  border-color: rgba(167, 139, 250, 0.45);
+  transform: translateY(-3px);
+}
+.mkt-bento-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.35;
+}
+.mkt-bento-card.pink::before {
+  background: var(--mkt-pink);
+}
+.mkt-bento-card.teal::before {
+  background: var(--mkt-teal);
+}
+.mkt-bento-card.violet::before {
+  background: var(--mkt-violet);
+}
+
+.mkt-bento-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--mkt-gold);
+  margin-bottom: 1rem;
+}
+.mkt-bento-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+.mkt-bento-card p {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgba(203, 213, 225, 0.75);
+}
+
+.mkt-promo-row {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .mkt-promo-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.mkt-promo {
+  border-radius: 1.35rem;
+  padding: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s;
+}
+.mkt-promo:hover {
+  transform: scale(1.01);
+}
+.mkt-promo.hot {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #db2777 100%);
+}
+.mkt-promo.cool {
+  background: linear-gradient(135deg, #134e4a 0%, #0f766e 50%, #0369a1 100%);
+}
+.mkt-promo-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.mkt-promo h3 {
+  margin: 0.5rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #fff;
+}
+.mkt-promo p {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+  max-width: 20rem;
+}
+.mkt-promo-arrow {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.mkt-steps {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .mkt-steps {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.mkt-step {
+  text-align: center;
+  padding: 1.25rem 0.75rem;
+}
+.mkt-step-num {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.95rem;
+  color: #1e1b4b;
+  background: linear-gradient(135deg, var(--mkt-gold), var(--mkt-pink));
+}
+.mkt-step h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+}
+.mkt-step p {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.9);
+  line-height: 1.45;
+}
+
+.mkt-products {
+  background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.06) 40%, transparent);
+}
+
+.mkt-cta-band {
+  margin: 2rem 1.25rem 3rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2.5rem 1.5rem;
+  border-radius: 1.75rem;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(236, 72, 153, 0.2));
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  box-shadow: 0 24px 80px rgba(99, 102, 241, 0.15);
+}
+.mkt-cta-band h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+}
+.mkt-cta-band p {
+  margin: 0.75rem auto 0;
+  max-width: 28rem;
+  font-size: 0.9rem;
+  color: rgba(226, 232, 240, 0.75);
+}
+.mkt-cta-band .mkt-cta-row {
+  margin-top: 1.5rem;
+}
+
+.mkt-cta-row-center {
+  justify-content: center;
+}

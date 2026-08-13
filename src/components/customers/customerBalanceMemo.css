@@ -1,0 +1,159 @@
+.cbm-add {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--oc-line, rgba(255, 255, 255, 0.1)) 80%, transparent);
+}
+
+.cbm-add--compact {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.cbm-add-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.cbm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7a6a74;
+}
+
+.cbm-field--full {
+  margin-top: 0;
+}
+
+.cbm-field input,
+.cbm-field select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.65rem;
+  border: 1px solid #f0dce4;
+  background: #fffbfc;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a3f48;
+}
+
+.cbm-add-btn {
+  margin-top: 0.75rem;
+}
+
+.cbm-empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #a898a0;
+}
+
+.cbm-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cbm-item {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #f0dce4;
+  background: #fff7f9;
+}
+
+.cbm-item--plus {
+  border-color: #f5a0b4;
+  background: #ffe8ef;
+}
+
+.cbm-item--minus {
+  border-color: #7ed4b8;
+  background: #e6faf2;
+}
+
+.cbm-item-amount {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #5a4a52;
+  font-variant-numeric: tabular-nums;
+}
+
+.cbm-item--plus .cbm-item-amount {
+  color: #d9486c;
+}
+
+.cbm-item--minus .cbm-item-amount {
+  color: #1f9a72;
+}
+
+.cbm-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  color: #8a7a84;
+}
+
+.cbm-item--shipping_credit,
+.cbm-item--discount {
+  border-color: #7ed4b8;
+  background: #e6faf2;
+}
+
+.cbm-item--owed {
+  border-color: #f5a0b4;
+  background: #ffe8ef;
+}
+
+.cbm-item--settled {
+  opacity: 0.78;
+}
+
+.cbm-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cbm-item-kind {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #8a7a84;
+}
+
+.cbm-item-settled {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #9a8a94;
+}
+
+.cbm-item-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #4a3f48;
+}
+
+.cbm-item-settled-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: #8a7a84;
+}
+
+.cbm-item-delete {
+  margin-top: 0.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #d888a0;
+  cursor: pointer;
+}
+
+.cbm-item-delete:hover {
+  text-decoration: underline;
+}
