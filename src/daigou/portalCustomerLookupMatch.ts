@@ -1,10 +1,10 @@
 import type { PortalLookupCustomer } from '../api/types'
+import { customerNamesEqual } from '../modules/groupbuy/customerNameKey'
 import {
   effectiveLookupPin,
   isValidLookupPin,
   lookupNameKey,
   normalizeLookupPin,
-  verifyLookupAccess,
 } from './portalLookupAuth'
 
 export type LookupOrderLike = {
@@ -35,10 +35,10 @@ export function collectOrderCustomerNames(groups: LookupGroupLike[]): string[] {
 }
 
 /**
- * 依查詢字串解析可能的客人名稱：
+ * 依查詢字串解析客人名稱：
  * - 訂單編號（完全相符）
- * - 手機末三碼
- * - 暱稱／姓名（完全相符優先，否則部分相符）
+ * - 手機末三碼（完全相符）
+ * - 暱稱／姓名（正規化後完全相符，不含子字串）
  */
 export function resolveCustomerLookupCandidates(
   query: string,
@@ -81,14 +81,7 @@ export function resolveCustomerLookupCandidates(
 
   for (const n of namePool) {
     if (!n) continue
-    if (n.toLowerCase() === lower) found.add(n)
-  }
-
-  if (found.size === 0) {
-    for (const n of namePool) {
-      if (!n) continue
-      if (n.toLowerCase().includes(lower)) found.add(n)
-    }
+    if (customerNamesEqual(n, q)) found.add(n)
   }
 
   return [...found]
@@ -117,33 +110,57 @@ export function authorizeCustomerLookupQuery(
   const candidates = resolveCustomerLookupCandidates(q, groups, portalLookupCustomers, phoneHints)
 
   if (candidates.length === 0) {
-    // 查無對應客人時仍驗證預設／該名密碼（避免洩漏是否存在），再回傳空授權名
-    const auth = verifyLookupAccess(q, pin, portalLookupCustomers)
-    if (!auth.ok) return { ok: false, error: auth.error || '查單密碼錯誤' }
-    return { ok: true, authorizedNames: [q] }
+    return { ok: false, error: '查無符合的客人，請輸入完整暱稱或訂單編號' }
   }
 
   const authorized: string[] = []
+  let sawMissing = false
+  let sawWrong = false
   for (const name of candidates) {
     const entry = (portalLookupCustomers || []).find(
-      (c) => lookupNameKey(c.lineDisplayName) === name || lookupNameKey(c.name) === name,
+      (c) => customerNamesEqual(c.lineDisplayName, name) || customerNamesEqual(c.name, name),
     )
     const expectedPin = entry ? effectiveLookupPin(entry.lookupPin) : ''
-    if (expectedPin && expectedPin === pin) authorized.push(name)
+    if (!expectedPin) {
+      sawMissing = true
+      continue
+    }
+    if (expectedPin === pin) authorized.push(name)
+    else sawWrong = true
   }
 
   if (authorized.length === 0) {
-    return { ok: false, error: '查單密碼錯誤' }
+    return {
+      ok: false,
+      error:
+        sawMissing && !sawWrong
+          ? '查單密碼尚未設定，請聯絡團主為你設定專屬查單密碼'
+          : '查單密碼錯誤',
+    }
   }
-  return { ok: true, authorizedNames: authorized }
+
+  const expanded = new Set<string>(authorized)
+  for (const name of authorized) {
+    for (const c of portalLookupCustomers || []) {
+      if (!customerNamesEqual(c.name, name) && !customerNamesEqual(c.lineDisplayName, name)) continue
+      if (c.name) expanded.add(c.name)
+      if (c.lineDisplayName) expanded.add(c.lineDisplayName)
+    }
+  }
+  for (const g of groups) {
+    for (const o of g.orders || []) {
+      const cn = lookupNameKey(o.customerName || '')
+      if (!cn) continue
+      if ([...expanded].some((alias) => customerNamesEqual(alias, cn))) expanded.add(cn)
+    }
+  }
+  return { ok: true, authorizedNames: [...expanded] }
 }
 
 export function orderMatchesAuthorizedNames(
   customerName: string | undefined,
   authorizedNames: string[],
 ): boolean {
-  const n = lookupNameKey(customerName || '')
-  if (!n) return false
-  const lower = n.toLowerCase()
-  return authorizedNames.some((a) => lookupNameKey(a).toLowerCase() === lower)
+  if (!lookupNameKey(customerName || '')) return false
+  return authorizedNames.some((a) => customerNamesEqual(customerName || '', a))
 }

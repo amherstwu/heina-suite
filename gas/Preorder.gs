@@ -75,12 +75,24 @@ function po_safeId_(v) {
   return String(v).trim();
 }
 
-function po_writeAllData_(groups) {
+function po_writeAllData_(pl) {
+  var groups = pl;
+  var confirmEmpty = false;
+  if (pl && !Array.isArray(pl)) {
+    groups = pl.groups || [];
+    confirmEmpty = !!pl.confirmEmptyOverwrite;
+  }
+  if (!Array.isArray(groups)) groups = [];
+
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   po_ensureSheets_(ss);
   var shG = ss.getSheetByName(PO_SHEET_GROUPS);
   var shO = ss.getSheetByName(PO_SHEET_ORDERS);
   var shI = ss.getSheetByName(PO_SHEET_ITEMS);
+  var hasRows = shG.getLastRow() > 1 || shO.getLastRow() > 1 || shI.getLastRow() > 1;
+  if (!groups.length && hasRows && !confirmEmpty) {
+    throw new Error('拒絕以空白資料覆蓋現有預購。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。');
+  }
   po_clearData_(shG);
   po_clearData_(shO);
   po_clearData_(shI);
@@ -256,76 +268,26 @@ function po_readAllData_() {
  */
 function po_customerLookup_(pl) {
   var rawQ = pl && pl.customerName ? String(pl.customerName).trim() : '';
-  var lookupPin = pl && pl.lookupPin != null ? String(pl.lookupPin) : '';
   var all = gb_fetchAllData_();
   var portalConfig = all.portalConfig || gb_buildPortalConfigFromSettings_({});
-  var matches = [];
   if (!rawQ) {
-    return { portalConfig: portalConfig, matches: matches };
+    return { portalConfig: portalConfig, matches: [] };
   }
 
   var groups = po_readAllData_();
-  var portalCustomers = all.portalLookupCustomers || [];
-  var qLower = rawQ.toLowerCase();
-  var candidateMap = {};
-
-  function addCandidate(n) {
-    var key = String(n || '').trim();
-    if (key) candidateMap[key] = true;
+  var auth = gb_guardedAuthorize_(pl, groups, all.portalLookupCustomers || []);
+  if (!auth.ok) {
+    return { portalConfig: portalConfig, matches: [], lookupError: auth.message || '查單密碼錯誤' };
   }
 
-  var gi, oi, g, o, orders, namePool = {}, i;
+  var matches = [];
+  var gi, oi, g, o, orders;
   for (gi = 0; gi < groups.length; gi++) {
     g = groups[gi];
     orders = g.orders || [];
     for (oi = 0; oi < orders.length; oi++) {
       o = orders[oi];
-      var cn = String(o.customerName || '').trim();
-      if (cn) namePool[cn] = true;
-      if (String(o.id || '').trim().toLowerCase() === qLower) addCandidate(cn);
-    }
-  }
-  for (var pi = 0; pi < portalCustomers.length; pi++) {
-    var pc = portalCustomers[pi];
-    if (pc && pc.name) namePool[String(pc.name).trim()] = true;
-    if (pc && pc.lineDisplayName) namePool[String(pc.lineDisplayName).trim()] = true;
-  }
-
-  var poolKeys = Object.keys(namePool);
-  for (i = 0; i < poolKeys.length; i++) {
-    if (poolKeys[i].toLowerCase() === qLower) addCandidate(poolKeys[i]);
-  }
-  if (Object.keys(candidateMap).length === 0) {
-    for (i = 0; i < poolKeys.length; i++) {
-      if (poolKeys[i].toLowerCase().indexOf(qLower) >= 0) addCandidate(poolKeys[i]);
-    }
-  }
-  if (Object.keys(candidateMap).length === 0) addCandidate(rawQ);
-
-  var authorized = {};
-  var candKeys = Object.keys(candidateMap);
-  var authOkAny = false;
-  var lastAuthMsg = '查單密碼錯誤';
-  for (i = 0; i < candKeys.length; i++) {
-    var auth = gb_verifyLookupPin_(candKeys[i], lookupPin, portalCustomers);
-    if (auth.ok) {
-      authorized[candKeys[i].toLowerCase()] = true;
-      authOkAny = true;
-    } else if (auth.message) {
-      lastAuthMsg = auth.message;
-    }
-  }
-  if (!authOkAny) {
-    return { portalConfig: portalConfig, matches: matches, lookupError: lastAuthMsg };
-  }
-
-  for (gi = 0; gi < groups.length; gi++) {
-    g = groups[gi];
-    orders = g.orders || [];
-    for (oi = 0; oi < orders.length; oi++) {
-      o = orders[oi];
-      var on = String(o.customerName || '').trim();
-      if (!authorized[on.toLowerCase()]) continue;
+      if (!gb_orderVisibleToLookup_(o.customerName, auth.authorizedKeys)) continue;
       matches.push({
         groupId: g.id,
         groupName: g.name,

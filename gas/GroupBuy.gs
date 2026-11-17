@@ -70,7 +70,7 @@ function gb_ensureDefaultSettings_() {
     ['portalWebsiteUrl', existing.portalWebsiteUrl != null ? existing.portalWebsiteUrl : ''],
     ['portalGroupUrl', existing.portalGroupUrl != null ? existing.portalGroupUrl : ''],
     ['portalExtraNote', existing.portalExtraNote != null ? existing.portalExtraNote : '付款後請填寫：付款日期、後五碼，等待對帳完成後即可在此查看狀態。'],
-    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。']
+    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的完整名字或完整訂單編號，以及團主設定的 4 位數專屬查單密碼。沒有專屬密碼請私訊官方 LINE。']
   ];
   var appendRows = [];
   for (var d = 0; d < defaults.length; d++) {
@@ -79,7 +79,7 @@ function gb_ensureDefaultSettings_() {
   }
   if (appendRows.length) {
     var start = settingsSheet.getLastRow() + 1;
-    settingsSheet.getRange(start, 1, start + appendRows.length - 1, 2).setValues(appendRows);
+    settingsSheet.getRange(start, 1, appendRows.length, 2).setValues(appendRows);
   }
 }
 
@@ -444,7 +444,12 @@ function gb_syncPortalLookupCustomers_(pl) {
   gb_initSheets_();
   var ss = SpreadsheetApp.getActive();
   var settingsSheet = ss.getSheetByName(GB_SHEET_SETTINGS);
-  var list = pl && pl.portalLookupCustomers ? pl.portalLookupCustomers : [];
+  var existing = gb_fetchAllData_().portalLookupCustomers || [];
+  var incoming = pl && pl.portalLookupCustomers ? pl.portalLookupCustomers : [];
+  if (!incoming.length && existing.length && !(pl && pl.confirmEmptyOverwrite)) {
+    throw new Error('拒絕以空白客人名單覆蓋現有查單密碼。');
+  }
+  var list = gb_mergePortalLookupCustomers_(existing, incoming);
   gb_writePortalLookupCustomers_(settingsSheet, list);
   if (pl && pl.customerBalanceMemos) {
     gb_writeCustomerBalanceMemos_(settingsSheet, pl.customerBalanceMemos);
@@ -452,76 +457,99 @@ function gb_syncPortalLookupCustomers_(pl) {
   return { status: 'success', count: list.length };
 }
 
-function gb_customerLookup_(pl) {
+function gb_lookupRateCacheKey_(name) {
+  var raw = gb_normalizeLookupKey_(name) || '_';
+  var hex = '';
+  for (var i = 0; i < raw.length && hex.length < 160; i++) {
+    hex += raw.charCodeAt(i).toString(16);
+  }
+  return 'heina_lu_' + hex;
+}
+
+function gb_readLookupFails_(name) {
+  try {
+    var n = Number(CacheService.getScriptCache().get(gb_lookupRateCacheKey_(name)) || '0');
+    return isFinite(n) ? n : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function gb_lookupGuard_(name) {
+  return gb_lookupRateDecision_(gb_readLookupFails_(name));
+}
+
+function gb_noteLookupFail_(name) {
+  var next = gb_nextLookupFailCount_(gb_readLookupFails_(name));
+  try {
+    CacheService.getScriptCache().put(gb_lookupRateCacheKey_(name), String(next), 900);
+  } catch (e) {}
+  return gb_lookupRateDecision_(next);
+}
+
+function gb_clearLookupFails_(name) {
+  try {
+    CacheService.getScriptCache().remove(gb_lookupRateCacheKey_(name));
+  } catch (e) {}
+}
+
+function gb_guardedAuthorize_(pl, groups, portalCustomers) {
   var rawQ = pl && pl.customerName ? String(pl.customerName).trim() : '';
   var lookupPin = pl && pl.lookupPin != null ? String(pl.lookupPin) : '';
+  if (!rawQ) return { ok: true, emptyQuery: true, authorizedKeys: [], message: '' };
+  var gate = gb_lookupGuard_(rawQ);
+  if (gate.locked) return { ok: false, emptyQuery: false, authorizedKeys: [], message: gate.message };
+  var auth = gb_authorizeLookup_(rawQ, lookupPin, groups, portalCustomers);
+  if (!auth.ok) {
+    gb_noteLookupFail_(rawQ);
+    return { ok: false, emptyQuery: false, authorizedKeys: [], message: auth.message };
+  }
+  gb_clearLookupFails_(rawQ);
+  return { ok: true, emptyQuery: false, authorizedKeys: auth.authorizedKeys, message: '' };
+}
+
+function gb_replacePortalLookupPin_(list, name, newPin) {
+  var q = gb_normalizeLookupKey_(name);
+  var next = [];
+  var found = false;
+  for (var i = 0; i < (list || []).length; i++) {
+    var c = list[i] || {};
+    var hit = gb_normalizeLookupKey_(c.name) === q || gb_normalizeLookupKey_(c.lineDisplayName) === q;
+    if (hit && !found) {
+      next.push({
+        name: c.name || name,
+        lineDisplayName: c.lineDisplayName || c.name || name,
+        lookupPin: newPin
+      });
+      found = true;
+    } else {
+      next.push(c);
+    }
+  }
+  return found ? next : null;
+}
+
+function gb_customerLookup_(pl) {
   var all = gb_fetchAllData_();
   var portalConfig = all.portalConfig;
-  var matches = [];
-  if (!rawQ) return { portalConfig: portalConfig, matches: matches };
+  var rawQ = pl && pl.customerName ? String(pl.customerName).trim() : '';
+  if (!rawQ) return { portalConfig: portalConfig, matches: [] };
 
   var groups = all.groups || [];
-  var portalCustomers = all.portalLookupCustomers || [];
-  var qLower = rawQ.toLowerCase();
-  var candidateMap = {};
-
-  function addCandidate(n) {
-    var key = String(n || '').trim();
-    if (key) candidateMap[key] = true;
+  var auth = gb_guardedAuthorize_(pl, groups, all.portalLookupCustomers || []);
+  if (!auth.ok) {
+    return { portalConfig: portalConfig, matches: [], lookupError: auth.message || '查單密碼錯誤' };
   }
 
-  var gi, oi, g, o, orders, namePool = {};
-  for (gi = 0; gi < groups.length; gi++) {
-    g = groups[gi];
-    orders = g.orders || [];
-    for (oi = 0; oi < orders.length; oi++) {
-      o = orders[oi];
-      var cn = String(o.customerName || '').trim();
-      if (cn) namePool[cn] = true;
-      if (String(o.id || '').trim().toLowerCase() === qLower) addCandidate(cn);
-    }
-  }
-  for (var pi = 0; pi < portalCustomers.length; pi++) {
-    var pc = portalCustomers[pi];
-    if (pc && pc.name) namePool[String(pc.name).trim()] = true;
-    if (pc && pc.lineDisplayName) namePool[String(pc.lineDisplayName).trim()] = true;
-  }
-
-  var poolKeys = Object.keys(namePool);
-  var i;
-  for (i = 0; i < poolKeys.length; i++) {
-    if (poolKeys[i].toLowerCase() === qLower) addCandidate(poolKeys[i]);
-  }
-  if (Object.keys(candidateMap).length === 0) {
-    for (i = 0; i < poolKeys.length; i++) {
-      if (poolKeys[i].toLowerCase().indexOf(qLower) >= 0) addCandidate(poolKeys[i]);
-    }
-  }
-  if (Object.keys(candidateMap).length === 0) addCandidate(rawQ);
-
-  var authorized = {};
-  var candKeys = Object.keys(candidateMap);
-  var authOkAny = false;
-  var lastAuthMsg = '查單密碼錯誤';
-  for (i = 0; i < candKeys.length; i++) {
-    var auth = gb_verifyLookupPin_(candKeys[i], lookupPin, portalCustomers);
-    if (auth.ok) {
-      authorized[candKeys[i].toLowerCase()] = true;
-      authOkAny = true;
-    } else if (auth.message) {
-      lastAuthMsg = auth.message;
-    }
-  }
-  if (!authOkAny) return { portalConfig: portalConfig, matches: matches, lookupError: lastAuthMsg };
-
+  var matches = [];
+  var gi, oi, g, o, orders;
   for (gi = 0; gi < groups.length; gi++) {
     g = groups[gi];
     gb_attachGroupPortalFields_(g);
     orders = g.orders || [];
     for (oi = 0; oi < orders.length; oi++) {
       o = orders[oi];
-      var on = String(o.customerName || '').trim();
-      if (!authorized[on.toLowerCase()]) continue;
+      if (!gb_orderVisibleToLookup_(o.customerName, auth.authorizedKeys)) continue;
       matches.push({
         groupId: g.id, groupName: g.name, groupStatus: g.status,
         closingDate: g.closingDate, saleEndDate: g.saleEndDate,
@@ -604,13 +632,22 @@ function gb_performSave_(payload) {
   var orderSheet = ss.getSheetByName(GB_SHEET_ORDERS);
   var journalSheet = ss.getSheetByName(GB_SHEET_JOURNAL);
   var settingsSheet = ss.getSheetByName(GB_SHEET_SETTINGS);
+  var groupsIn = payload && payload.groups ? payload.groups : [];
+  var journalIn = payload && payload.bankJournal ? payload.bankJournal : [];
+  var confirmedEmpty = !!(payload && payload.confirmEmptyOverwrite);
+  if (!groupsIn.length && orderSheet.getLastRow() > 1 && !confirmedEmpty) {
+    throw new Error('拒絕以空白訂單覆蓋現有團務資料。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。');
+  }
+  if (!journalIn.length && journalSheet.getLastRow() > 1 && !confirmedEmpty) {
+    throw new Error('拒絕以空白日記帳覆蓋現有帳務。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。');
+  }
 
   var last = orderSheet.getLastRow();
   if (last > 1) orderSheet.getRange(2, 1, last, GB_COLS).clearContent();
 
   var rows = gb_buildFlatRows_(payload.groups || []);
   if (rows.length > 0) {
-    orderSheet.getRange(2, 1, 1 + rows.length, GB_COLS).setValues(rows);
+    orderSheet.getRange(2, 1, rows.length, GB_COLS).setValues(rows);
   }
 
   var jLast = journalSheet.getLastRow();
@@ -620,7 +657,7 @@ function gb_performSave_(payload) {
     return [j.id, j.date, j.bank, j.type, j.amount, j.category, j.note];
   });
   if (jRows.length > 0) {
-    journalSheet.getRange(2, 1, 1 + jRows.length, 7).setValues(jRows);
+    journalSheet.getRange(2, 1, jRows.length, 7).setValues(jRows);
   }
 
   if (payload.exchangeRate != null) {
@@ -1008,7 +1045,7 @@ function gb_importDataPack_(pl) {
           for (var c = 0; c < GB_COLS; c++) row.push(r[c] != null ? r[c] : '');
           return row;
         });
-        orderSheet.getRange(2, 1, 1 + ovals.length, GB_COLS).setValues(ovals);
+        orderSheet.getRange(2, 1, ovals.length, GB_COLS).setValues(ovals);
       }
     } else {
       var all = gb_fetchAllData_();
@@ -1031,7 +1068,7 @@ function gb_importDataPack_(pl) {
       var olast2 = orderSheet.getLastRow();
       if (olast2 > 1) orderSheet.getRange(2, 1, olast2, GB_COLS).clearContent();
       if (merged.length) {
-        orderSheet.getRange(2, 1, 1 + merged.length, GB_COLS).setValues(merged);
+        orderSheet.getRange(2, 1, merged.length, GB_COLS).setValues(merged);
       }
     }
   }
@@ -1046,7 +1083,7 @@ function gb_importDataPack_(pl) {
         var jvals = jBody.map(function (r) {
           return [r[0] || '', r[1] || '', r[2] || '', r[3] || '', r[4] || '', r[5] || '', r[6] || ''];
         });
-        journalSheet.getRange(2, 1, 1 + jvals.length, 7).setValues(jvals);
+        journalSheet.getRange(2, 1, jvals.length, 7).setValues(jvals);
       }
     } else {
       var existingJ = {};
@@ -1064,7 +1101,7 @@ function gb_importDataPack_(pl) {
       }
       var jlast2 = journalSheet.getLastRow();
       if (jlast2 > 1) journalSheet.getRange(2, 1, jlast2, 7).clearContent();
-      if (jMerged.length) journalSheet.getRange(2, 1, 1 + jMerged.length, 7).setValues(jMerged);
+      if (jMerged.length) journalSheet.getRange(2, 1, jMerged.length, 7).setValues(jMerged);
     }
   }
 
@@ -1091,29 +1128,9 @@ function gb_importDataPack_(pl) {
   };
 }
 
-function gb_findPortalLookupCustomer_(name, list) {
-  var q = String(name || '').trim();
-  if (!q) return null;
-  for (var i = 0; i < list.length; i++) {
-    var c = list[i];
-    if (String(c.lineDisplayName || '').trim() === q || String(c.name || '').trim() === q) return c;
-  }
-  return null;
-}
-
-function gb_verifyLookupPin_(name, pin, list) {
-  var normalized = String(pin || '').replace(/\D/g, '').slice(0, 4);
-  if (!/^\d{4}$/.test(normalized)) return { ok: false, message: '請輸入 4 位數查單密碼' };
-  var entry = gb_findPortalLookupCustomer_(name, list || []);
-  var stored = entry ? String(entry.lookupPin || '').replace(/\D/g, '').slice(0, 4) : '';
-  var expected = /^\d{4}$/.test(stored) ? stored : heinaLookupPin_();
-  if (!/^\d{4}$/.test(expected)) {
-    return { ok: false, message: '查單密碼尚未設定，請聯絡團主' };
-  }
-  if (expected !== normalized) {
-    return { ok: false, message: '查單密碼錯誤' };
-  }
-  return { ok: true };
+function gb_credentialFailure_(message) {
+  var msg = String(message || '');
+  return msg === '目前密碼錯誤' || msg.indexOf('查無') === 0 || msg.indexOf('尚未設定') >= 0 || msg.indexOf('查單密碼錯誤') >= 0;
 }
 
 function gb_publicBootstrap_() {
@@ -1123,67 +1140,42 @@ function gb_publicBootstrap_() {
 
 function gb_customerBalanceMemos_(pl) {
   var name = pl && pl.customerName ? String(pl.customerName).trim() : '';
-  var pin = pl && pl.lookupPin != null ? String(pl.lookupPin) : '';
   if (!name) return { ok: false, message: '請輸入查詢名稱', memos: [] };
   var all = gb_fetchAllData_();
-  var auth = gb_verifyLookupPin_(name, pin, all.portalLookupCustomers || []);
+  var auth = gb_guardedAuthorize_(pl, all.groups || [], all.portalLookupCustomers || []);
   if (!auth.ok) return { ok: false, message: auth.message || '查單密碼錯誤', memos: [] };
-  var want = name.replace(/\s+/g, '').toLowerCase();
   var memos = [];
   var list = all.customerBalanceMemos || [];
   for (var i = 0; i < list.length; i++) {
     var m = list[i];
     if (!m) continue;
-    var n = String(m.customerName || '').replace(/\s+/g, '').toLowerCase();
-    if (n === want) memos.push(m);
+    if (gb_orderVisibleToLookup_(m.customerName, auth.authorizedKeys)) memos.push(m);
   }
   return { ok: true, memos: memos };
 }
 
-function gb_upsertPortalLookupPin_(list, name, newPin) {
-  var q = String(name || '').trim();
-  var pin = String(newPin || '').replace(/\D/g, '').slice(0, 4);
-  var next = [];
-  var found = false;
-  for (var i = 0; i < (list || []).length; i++) {
-    var c = list[i];
-    if (String(c.lineDisplayName || '').trim() === q || String(c.name || '').trim() === q) {
-      next.push({
-        name: c.name || q,
-        lineDisplayName: c.lineDisplayName || q,
-        lookupPin: pin
-      });
-      found = true;
-    } else {
-      next.push(c);
-    }
-  }
-  if (!found) next.push({ name: q, lineDisplayName: q, lookupPin: pin });
-  return next;
-}
-
 function gb_changeLookupPin_(pl) {
-  gb_initSheets_();
-  var all = gb_fetchAllData_();
   var name = pl && pl.customerName ? String(pl.customerName).trim() : '';
   var currentPin = pl && pl.currentPin != null ? String(pl.currentPin) : '';
   var newPin = pl && pl.newPin != null ? String(pl.newPin) : '';
   var confirmPin = pl && pl.confirmPin != null ? String(pl.confirmPin) : '';
   if (!name) return { ok: false, message: '請輸入查詢名稱' };
-  var cur = currentPin.replace(/\D/g, '').slice(0, 4);
-  var next = newPin.replace(/\D/g, '').slice(0, 4);
-  var confirm = confirmPin.replace(/\D/g, '').slice(0, 4);
-  if (!/^\d{4}$/.test(cur)) return { ok: false, message: '請輸入目前的 4 位數密碼' };
-  if (!/^\d{4}$/.test(next)) return { ok: false, message: '新密碼須為 4 位數字' };
-  if (next !== confirm) return { ok: false, message: '兩次新密碼不一致' };
-  if (next === cur) return { ok: false, message: '新密碼不可與目前密碼相同' };
-  var auth = gb_verifyLookupPin_(name, cur, all.portalLookupCustomers || []);
-  if (!auth.ok) return { ok: false, message: auth.message || '目前密碼錯誤' };
-  var nextList = gb_upsertPortalLookupPin_(all.portalLookupCustomers || [], name, next);
+  var gate = gb_lookupGuard_(name);
+  if (gate.locked) return { ok: false, message: gate.message };
+  gb_initSheets_();
+  var all = gb_fetchAllData_();
+  var verdict = gb_evaluateChangeLookupPin_(name, currentPin, newPin, confirmPin, all.portalLookupCustomers || []);
+  if (!verdict.ok) {
+    if (gb_credentialFailure_(verdict.message)) gb_noteLookupFail_(name);
+    return { ok: false, message: verdict.message || '目前密碼錯誤' };
+  }
+  var nextList = gb_replacePortalLookupPin_(all.portalLookupCustomers || [], name, verdict.lookupPin);
+  if (!nextList) return { ok: false, message: '查無此客人或尚未設定專屬密碼，請聯絡團主' };
   var ss = SpreadsheetApp.getActive();
   var settingsSheet = ss.getSheetByName(GB_SHEET_SETTINGS);
   gb_writePortalLookupCustomers_(settingsSheet, nextList);
-  return { ok: true, message: '查單密碼已更新', lookupPin: next };
+  gb_clearLookupFails_(name);
+  return { ok: true, message: verdict.message || '查單密碼已更新', lookupPin: verdict.lookupPin };
 }
 
 function gb_calcOrderBalance_(totalTwd, deposit, domesticShip, intlShip) {

@@ -234,7 +234,7 @@ export function V50GroupOpsPage() {
         setStatusMsg('已儲存')
       } catch (e) {
         console.error(e)
-        setStatusMsg('儲存失敗')
+        setStatusMsg(e instanceof Error ? e.message : '儲存失敗')
       }
       setTimeout(() => setStatusMsg(''), 2200)
     },

@@ -12,7 +12,9 @@
  * Do not put passwords or PINs in source. This file only names the keys.
  *
  *   HEINA_ADMIN_PASSWORD   organizer login (required before admin API calls)
- *   HEINA_LOOKUP_PIN       default 4-digit order lookup PIN when a customer has none stored
+ *   HEINA_LOOKUP_PIN       retired shared lookup PIN. Do not use it to open
+ *                          customer orders. Replace or delete the old value.
+ *                          Each customer needs their own 4-digit lookupPin.
  *   HEINA_BANK_PASSWORD    shared bank-account lookup password
  *   HEINA_PAGES_URL        optional public site URL (defaults to the GitHub Pages project URL)
  *   HEINA_ADMIN_SESSIONS   managed automatically (token → expiry). Do not edit by hand.
@@ -41,6 +43,11 @@ function heinaAdminPassword_() {
   return heinaScriptProp_(HEINA_PROP_ADMIN_PASSWORD);
 }
 
+/**
+ * Kept so a rotated HEINA_LOOKUP_PIN can still be read. Customer lookup must
+ * not fall back to this value — a shared PIN used to open every customer who
+ * had no personal PIN.
+ */
 function heinaLookupPin_() {
   var pin = heinaScriptProp_(HEINA_PROP_LOOKUP_PIN).replace(/\D/g, '').slice(0, 4);
   return /^\d{4}$/.test(pin) ? pin : '';
@@ -183,6 +190,294 @@ function heinaAdminChangePassword_(pl) {
   return { ok: true, message: '已更新管理密碼，請重新登入' };
 }
 
+/**
+ * Exclusive lock around Web App handlers so a save cannot clear a sheet while
+ * another request reads or writes it. Apps Script locks are not re-entrant;
+ * helpers must not call this again.
+ */
+function heinaWithScriptLock_(fn) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (e) {
+    throw new Error('系統忙碌中，請稍後再試');
+  }
+  try {
+    return fn();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+
+/* --- next: --- */
+
+/**
+ * Pure lookup and sheet-range helpers. No SpreadsheetApp / CacheService / LockService.
+ * Apps Script Sheet.getRange(row, column, numRows, numColumns) takes a row COUNT
+ * in the third argument. Passing the end row (1 + data.length, or the row index
+ * itself) makes setValues throw because the range is taller than the values.
+ */
+
+var GB_LOOKUP_MAX_FAILS = 8;
+
+function gb_normalizeLookupKey_(s) {
+  var t = String(s || '').trim();
+  if (!t) return '';
+  try {
+    if (typeof t.normalize === 'function') t = t.normalize('NFKC');
+  } catch (e) {}
+  return t.replace(/\s+/g, '').toLowerCase();
+}
+
+function gb_normalizePin_(pin) {
+  var s = String(pin == null ? '' : pin);
+  try {
+    if (typeof s.normalize === 'function') s = s.normalize('NFKC');
+  } catch (e) {}
+  return s.replace(/\D/g, '').slice(0, 4);
+}
+
+function gb_isPin_(pin) {
+  return /^\d{4}$/.test(pin);
+}
+
+/**
+ * One subject per normalized name. A portal row links its name and LINE display
+ * name so either query can see that customer's orders. Order ids are exact only.
+ */
+function gb_collectLookupSubjects_(groups, portalCustomers) {
+  var subjects = [];
+  var byKey = {};
+
+  function ensure(label) {
+    var key = gb_normalizeLookupKey_(label);
+    if (!key) return null;
+    if (!byKey[key]) {
+      var rec = { key: key, label: String(label).trim(), orderIds: [], pin: '', linked: {} };
+      rec.linked[key] = true;
+      byKey[key] = rec;
+      subjects.push(rec);
+    }
+    return byKey[key];
+  }
+
+  var gi, oi, g, orders, o, pi, c, pin, labels, recs, i, j, rec;
+  for (gi = 0; gi < (groups || []).length; gi++) {
+    g = groups[gi];
+    orders = g && g.orders ? g.orders : [];
+    for (oi = 0; oi < orders.length; oi++) {
+      o = orders[oi];
+      rec = ensure(o && o.customerName);
+      if (!rec) continue;
+      var oid = String((o && o.id) || '').trim();
+      if (oid) rec.orderIds.push(oid);
+    }
+  }
+
+  for (pi = 0; pi < (portalCustomers || []).length; pi++) {
+    c = portalCustomers[pi];
+    if (!c) continue;
+    pin = gb_normalizePin_(c.lookupPin);
+    if (!gb_isPin_(pin)) pin = '';
+    labels = [];
+    if (c.name) labels.push(c.name);
+    if (c.lineDisplayName) labels.push(c.lineDisplayName);
+    recs = [];
+    for (i = 0; i < labels.length; i++) {
+      rec = ensure(labels[i]);
+      if (rec) recs.push(rec);
+    }
+    for (i = 0; i < recs.length; i++) {
+      if (pin && !recs[i].pin) recs[i].pin = pin;
+      for (j = 0; j < recs.length; j++) recs[i].linked[recs[j].key] = true;
+    }
+  }
+
+  return subjects;
+}
+
+/**
+ * Authorize a lookup. There is no shared default PIN: a customer with no
+ * stored 4-digit PIN does not match any password.
+ * Name match is normalized equality (NFKC, no whitespace, case-insensitive).
+ * Substring names are not candidates. An order id must match in full.
+ */
+function gb_authorizeLookup_(query, pin, groups, portalCustomers) {
+  var qRaw = String(query || '').trim();
+  var qKey = gb_normalizeLookupKey_(qRaw);
+  var qId = qRaw.toLowerCase();
+  var normalizedPin = gb_normalizePin_(pin);
+  if (!qRaw) return { ok: false, message: '請輸入查詢名稱', authorizedKeys: [] };
+  if (!gb_isPin_(normalizedPin)) return { ok: false, message: '請輸入 4 位數查單密碼', authorizedKeys: [] };
+
+  var subjects = gb_collectLookupSubjects_(groups, portalCustomers);
+  var matched = [];
+  var i, s, j;
+  for (i = 0; i < subjects.length; i++) {
+    s = subjects[i];
+    if (qKey && s.key === qKey) {
+      matched.push(s);
+      continue;
+    }
+    if (!qId) continue;
+    for (j = 0; j < s.orderIds.length; j++) {
+      if (String(s.orderIds[j]).trim().toLowerCase() === qId) {
+        matched.push(s);
+        break;
+      }
+    }
+  }
+
+  if (!matched.length) {
+    return { ok: false, message: '查無符合的客人，請輸入完整暱稱或訂單編號', authorizedKeys: [] };
+  }
+
+  var authorized = {};
+  var sawMissing = false;
+  var sawWrong = false;
+  for (i = 0; i < matched.length; i++) {
+    s = matched[i];
+    if (!gb_isPin_(s.pin)) {
+      sawMissing = true;
+      continue;
+    }
+    if (s.pin !== normalizedPin) {
+      sawWrong = true;
+      continue;
+    }
+    for (var k in s.linked) {
+      if (Object.prototype.hasOwnProperty.call(s.linked, k)) authorized[k] = true;
+    }
+  }
+
+  var keys = [];
+  for (var ak in authorized) {
+    if (Object.prototype.hasOwnProperty.call(authorized, ak)) keys.push(ak);
+  }
+  if (!keys.length) {
+    return {
+      ok: false,
+      message: sawMissing && !sawWrong
+        ? '查單密碼尚未設定，請聯絡團主為你設定專屬查單密碼'
+        : '查單密碼錯誤',
+      authorizedKeys: []
+    };
+  }
+  return { ok: true, message: '', authorizedKeys: keys };
+}
+
+function gb_orderVisibleToLookup_(customerName, authorizedKeys) {
+  var key = gb_normalizeLookupKey_(customerName);
+  if (!key) return false;
+  for (var i = 0; i < (authorizedKeys || []).length; i++) {
+    if (authorizedKeys[i] === key) return true;
+  }
+  return false;
+}
+
+/**
+ * Public PIN change. Requires an existing portal row whose own PIN matches
+ * currentPin. Does not accept a shared default, and does not create a row.
+ */
+function gb_evaluateChangeLookupPin_(name, currentPin, newPin, confirmPin, portalCustomers) {
+  var q = String(name || '').trim();
+  if (!q) return { ok: false, message: '請輸入查詢名稱' };
+  var cur = gb_normalizePin_(currentPin);
+  var next = gb_normalizePin_(newPin);
+  var confirm = gb_normalizePin_(confirmPin);
+  if (!gb_isPin_(cur)) return { ok: false, message: '請輸入目前的 4 位數密碼' };
+  if (!gb_isPin_(next)) return { ok: false, message: '新密碼須為 4 位數字' };
+  if (next !== confirm) return { ok: false, message: '兩次新密碼不一致' };
+  if (next === cur) return { ok: false, message: '新密碼不可與目前密碼相同' };
+
+  var qKey = gb_normalizeLookupKey_(q);
+  var found = null;
+  for (var i = 0; i < (portalCustomers || []).length; i++) {
+    var c = portalCustomers[i];
+    if (!c) continue;
+    if (gb_normalizeLookupKey_(c.name) === qKey || gb_normalizeLookupKey_(c.lineDisplayName) === qKey) {
+      found = c;
+      break;
+    }
+  }
+  if (!found) return { ok: false, message: '查無此客人或尚未設定專屬密碼，請聯絡團主' };
+  var stored = gb_normalizePin_(found.lookupPin);
+  if (!gb_isPin_(stored)) return { ok: false, message: '查單密碼尚未設定，請聯絡團主' };
+  if (stored !== cur) return { ok: false, message: '目前密碼錯誤' };
+  return { ok: true, message: '查單密碼已更新', lookupPin: next };
+}
+
+/**
+ * Admin roster wins for names and for any PIN it actually sends.
+ * A blank incoming PIN keeps the PIN already stored for that person, so a
+ * customer who set their own password is not erased by a roster row that
+ * has no password yet.
+ */
+function gb_mergePortalLookupCustomers_(existing, incoming) {
+  var pinByKey = {};
+  function remember(c) {
+    if (!c) return;
+    var pin = gb_normalizePin_(c.lookupPin);
+    if (!gb_isPin_(pin)) return;
+    var keys = [gb_normalizeLookupKey_(c.name), gb_normalizeLookupKey_(c.lineDisplayName)];
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i] && !pinByKey[keys[i]]) pinByKey[keys[i]] = pin;
+    }
+  }
+  var i;
+  for (i = 0; i < (existing || []).length; i++) remember(existing[i]);
+
+  var next = [];
+  var seen = {};
+  for (i = 0; i < (incoming || []).length; i++) {
+    var c = incoming[i] || {};
+    var name = String(c.name || '').trim();
+    var line = String(c.lineDisplayName || name).trim();
+    var key = gb_normalizeLookupKey_(name) || gb_normalizeLookupKey_(line);
+    if (!key || seen[key]) continue;
+    seen[key] = true;
+    var pin = gb_normalizePin_(c.lookupPin);
+    if (!gb_isPin_(pin)) {
+      pin = pinByKey[gb_normalizeLookupKey_(name)] || pinByKey[gb_normalizeLookupKey_(line)] || '';
+    }
+    next.push({
+      name: name || line,
+      lineDisplayName: line || name,
+      lookupPin: gb_isPin_(pin) ? pin : ''
+    });
+  }
+  return next;
+}
+
+function gb_lookupRateDecision_(failCount) {
+  var n = Number(failCount);
+  if (!isFinite(n) || n < 0) n = 0;
+  if (n >= GB_LOOKUP_MAX_FAILS) {
+    return { locked: true, fails: n, message: '嘗試次數過多，請約 15 分鐘後再試' };
+  }
+  return { locked: false, fails: n, message: '' };
+}
+
+function gb_nextLookupFailCount_(failCount) {
+  var n = Number(failCount);
+  if (!isFinite(n) || n < 0) n = 0;
+  return n + 1;
+}
+
+/** numRows for Sheet.getRange when writing `values` under a header. */
+function gb_numRowsForValues_(values) {
+  return values && values.length ? values.length : 0;
+}
+
+/**
+ * One-row, three-column patch (value, timestamp, note) starting at column 3.
+ * getRange(row, 3, row, 5) is wrong: the third argument would be numRows = row.
+ */
+function gb_singleRowPatchShape_() {
+  return { numRows: 1, numColumns: 3 };
+}
+
 
 /* --- next: --- */
 
@@ -258,7 +553,7 @@ function gb_ensureDefaultSettings_() {
     ['portalWebsiteUrl', existing.portalWebsiteUrl != null ? existing.portalWebsiteUrl : ''],
     ['portalGroupUrl', existing.portalGroupUrl != null ? existing.portalGroupUrl : ''],
     ['portalExtraNote', existing.portalExtraNote != null ? existing.portalExtraNote : '付款後請填寫：付款日期、後五碼，等待對帳完成後即可在此查看狀態。'],
-    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。']
+    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的完整名字或完整訂單編號，以及團主設定的 4 位數專屬查單密碼。沒有專屬密碼請私訊官方 LINE。']
   ];
   var appendRows = [];
   for (var d = 0; d < defaults.length; d++) {
@@ -267,7 +562,7 @@ function gb_ensureDefaultSettings_() {
   }
   if (appendRows.length) {
     var start = settingsSheet.getLastRow() + 1;
-    settingsSheet.getRange(start, 1, start + appendRows.length - 1, 2).setValues(appendRows);
+    settingsSheet.getRange(start, 1, appendRows.length, 2).setValues(appendRows);
   }
 }
 
@@ -632,7 +927,12 @@ function gb_syncPortalLookupCustomers_(pl) {
   gb_initSheets_();
   var ss = SpreadsheetApp.getActive();
   var settingsSheet = ss.getSheetByName(GB_SHEET_SETTINGS);
-  var list = pl && pl.portalLookupCustomers ? pl.portalLookupCustomers : [];
+  var existing = gb_fetchAllData_().portalLookupCustomers || [];
+  var incoming = pl && pl.portalLookupCustomers ? pl.portalLookupCustomers : [];
+  if (!incoming.length && existing.length && !(pl && pl.confirmEmptyOverwrite)) {
+    throw new Error('拒絕以空白客人名單覆蓋現有查單密碼。');
+  }
+  var list = gb_mergePortalLookupCustomers_(existing, incoming);
   gb_writePortalLookupCustomers_(settingsSheet, list);
   if (pl && pl.customerBalanceMemos) {
     gb_writeCustomerBalanceMemos_(settingsSheet, pl.customerBalanceMemos);
@@ -640,76 +940,99 @@ function gb_syncPortalLookupCustomers_(pl) {
   return { status: 'success', count: list.length };
 }
 
-function gb_customerLookup_(pl) {
+function gb_lookupRateCacheKey_(name) {
+  var raw = gb_normalizeLookupKey_(name) || '_';
+  var hex = '';
+  for (var i = 0; i < raw.length && hex.length < 160; i++) {
+    hex += raw.charCodeAt(i).toString(16);
+  }
+  return 'heina_lu_' + hex;
+}
+
+function gb_readLookupFails_(name) {
+  try {
+    var n = Number(CacheService.getScriptCache().get(gb_lookupRateCacheKey_(name)) || '0');
+    return isFinite(n) ? n : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function gb_lookupGuard_(name) {
+  return gb_lookupRateDecision_(gb_readLookupFails_(name));
+}
+
+function gb_noteLookupFail_(name) {
+  var next = gb_nextLookupFailCount_(gb_readLookupFails_(name));
+  try {
+    CacheService.getScriptCache().put(gb_lookupRateCacheKey_(name), String(next), 900);
+  } catch (e) {}
+  return gb_lookupRateDecision_(next);
+}
+
+function gb_clearLookupFails_(name) {
+  try {
+    CacheService.getScriptCache().remove(gb_lookupRateCacheKey_(name));
+  } catch (e) {}
+}
+
+function gb_guardedAuthorize_(pl, groups, portalCustomers) {
   var rawQ = pl && pl.customerName ? String(pl.customerName).trim() : '';
   var lookupPin = pl && pl.lookupPin != null ? String(pl.lookupPin) : '';
+  if (!rawQ) return { ok: true, emptyQuery: true, authorizedKeys: [], message: '' };
+  var gate = gb_lookupGuard_(rawQ);
+  if (gate.locked) return { ok: false, emptyQuery: false, authorizedKeys: [], message: gate.message };
+  var auth = gb_authorizeLookup_(rawQ, lookupPin, groups, portalCustomers);
+  if (!auth.ok) {
+    gb_noteLookupFail_(rawQ);
+    return { ok: false, emptyQuery: false, authorizedKeys: [], message: auth.message };
+  }
+  gb_clearLookupFails_(rawQ);
+  return { ok: true, emptyQuery: false, authorizedKeys: auth.authorizedKeys, message: '' };
+}
+
+function gb_replacePortalLookupPin_(list, name, newPin) {
+  var q = gb_normalizeLookupKey_(name);
+  var next = [];
+  var found = false;
+  for (var i = 0; i < (list || []).length; i++) {
+    var c = list[i] || {};
+    var hit = gb_normalizeLookupKey_(c.name) === q || gb_normalizeLookupKey_(c.lineDisplayName) === q;
+    if (hit && !found) {
+      next.push({
+        name: c.name || name,
+        lineDisplayName: c.lineDisplayName || c.name || name,
+        lookupPin: newPin
+      });
+      found = true;
+    } else {
+      next.push(c);
+    }
+  }
+  return found ? next : null;
+}
+
+function gb_customerLookup_(pl) {
   var all = gb_fetchAllData_();
   var portalConfig = all.portalConfig;
-  var matches = [];
-  if (!rawQ) return { portalConfig: portalConfig, matches: matches };
+  var rawQ = pl && pl.customerName ? String(pl.customerName).trim() : '';
+  if (!rawQ) return { portalConfig: portalConfig, matches: [] };
 
   var groups = all.groups || [];
-  var portalCustomers = all.portalLookupCustomers || [];
-  var qLower = rawQ.toLowerCase();
-  var candidateMap = {};
-
-  function addCandidate(n) {
-    var key = String(n || '').trim();
-    if (key) candidateMap[key] = true;
+  var auth = gb_guardedAuthorize_(pl, groups, all.portalLookupCustomers || []);
+  if (!auth.ok) {
+    return { portalConfig: portalConfig, matches: [], lookupError: auth.message || '查單密碼錯誤' };
   }
 
-  var gi, oi, g, o, orders, namePool = {};
-  for (gi = 0; gi < groups.length; gi++) {
-    g = groups[gi];
-    orders = g.orders || [];
-    for (oi = 0; oi < orders.length; oi++) {
-      o = orders[oi];
-      var cn = String(o.customerName || '').trim();
-      if (cn) namePool[cn] = true;
-      if (String(o.id || '').trim().toLowerCase() === qLower) addCandidate(cn);
-    }
-  }
-  for (var pi = 0; pi < portalCustomers.length; pi++) {
-    var pc = portalCustomers[pi];
-    if (pc && pc.name) namePool[String(pc.name).trim()] = true;
-    if (pc && pc.lineDisplayName) namePool[String(pc.lineDisplayName).trim()] = true;
-  }
-
-  var poolKeys = Object.keys(namePool);
-  var i;
-  for (i = 0; i < poolKeys.length; i++) {
-    if (poolKeys[i].toLowerCase() === qLower) addCandidate(poolKeys[i]);
-  }
-  if (Object.keys(candidateMap).length === 0) {
-    for (i = 0; i < poolKeys.length; i++) {
-      if (poolKeys[i].toLowerCase().indexOf(qLower) >= 0) addCandidate(poolKeys[i]);
-    }
-  }
-  if (Object.keys(candidateMap).length === 0) addCandidate(rawQ);
-
-  var authorized = {};
-  var candKeys = Object.keys(candidateMap);
-  var authOkAny = false;
-  var lastAuthMsg = '查單密碼錯誤';
-  for (i = 0; i < candKeys.length; i++) {
-    var auth = gb_verifyLookupPin_(candKeys[i], lookupPin, portalCustomers);
-    if (auth.ok) {
-      authorized[candKeys[i].toLowerCase()] = true;
-      authOkAny = true;
-    } else if (auth.message) {
-      lastAuthMsg = auth.message;
-    }
-  }
-  if (!authOkAny) return { portalConfig: portalConfig, matches: matches, lookupError: lastAuthMsg };
-
+  var matches = [];
+  var gi, oi, g, o, orders;
   for (gi = 0; gi < groups.length; gi++) {
     g = groups[gi];
     gb_attachGroupPortalFields_(g);
     orders = g.orders || [];
     for (oi = 0; oi < orders.length; oi++) {
       o = orders[oi];
-      var on = String(o.customerName || '').trim();
-      if (!authorized[on.toLowerCase()]) continue;
+      if (!gb_orderVisibleToLookup_(o.customerName, auth.authorizedKeys)) continue;
       matches.push({
         groupId: g.id, groupName: g.name, groupStatus: g.status,
         closingDate: g.closingDate, saleEndDate: g.saleEndDate,
@@ -792,13 +1115,22 @@ function gb_performSave_(payload) {
   var orderSheet = ss.getSheetByName(GB_SHEET_ORDERS);
   var journalSheet = ss.getSheetByName(GB_SHEET_JOURNAL);
   var settingsSheet = ss.getSheetByName(GB_SHEET_SETTINGS);
+  var groupsIn = payload && payload.groups ? payload.groups : [];
+  var journalIn = payload && payload.bankJournal ? payload.bankJournal : [];
+  var confirmedEmpty = !!(payload && payload.confirmEmptyOverwrite);
+  if (!groupsIn.length && orderSheet.getLastRow() > 1 && !confirmedEmpty) {
+    throw new Error('拒絕以空白訂單覆蓋現有團務資料。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。');
+  }
+  if (!journalIn.length && journalSheet.getLastRow() > 1 && !confirmedEmpty) {
+    throw new Error('拒絕以空白日記帳覆蓋現有帳務。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。');
+  }
 
   var last = orderSheet.getLastRow();
   if (last > 1) orderSheet.getRange(2, 1, last, GB_COLS).clearContent();
 
   var rows = gb_buildFlatRows_(payload.groups || []);
   if (rows.length > 0) {
-    orderSheet.getRange(2, 1, 1 + rows.length, GB_COLS).setValues(rows);
+    orderSheet.getRange(2, 1, rows.length, GB_COLS).setValues(rows);
   }
 
   var jLast = journalSheet.getLastRow();
@@ -808,7 +1140,7 @@ function gb_performSave_(payload) {
     return [j.id, j.date, j.bank, j.type, j.amount, j.category, j.note];
   });
   if (jRows.length > 0) {
-    journalSheet.getRange(2, 1, 1 + jRows.length, 7).setValues(jRows);
+    journalSheet.getRange(2, 1, jRows.length, 7).setValues(jRows);
   }
 
   if (payload.exchangeRate != null) {
@@ -1196,7 +1528,7 @@ function gb_importDataPack_(pl) {
           for (var c = 0; c < GB_COLS; c++) row.push(r[c] != null ? r[c] : '');
           return row;
         });
-        orderSheet.getRange(2, 1, 1 + ovals.length, GB_COLS).setValues(ovals);
+        orderSheet.getRange(2, 1, ovals.length, GB_COLS).setValues(ovals);
       }
     } else {
       var all = gb_fetchAllData_();
@@ -1219,7 +1551,7 @@ function gb_importDataPack_(pl) {
       var olast2 = orderSheet.getLastRow();
       if (olast2 > 1) orderSheet.getRange(2, 1, olast2, GB_COLS).clearContent();
       if (merged.length) {
-        orderSheet.getRange(2, 1, 1 + merged.length, GB_COLS).setValues(merged);
+        orderSheet.getRange(2, 1, merged.length, GB_COLS).setValues(merged);
       }
     }
   }
@@ -1234,7 +1566,7 @@ function gb_importDataPack_(pl) {
         var jvals = jBody.map(function (r) {
           return [r[0] || '', r[1] || '', r[2] || '', r[3] || '', r[4] || '', r[5] || '', r[6] || ''];
         });
-        journalSheet.getRange(2, 1, 1 + jvals.length, 7).setValues(jvals);
+        journalSheet.getRange(2, 1, jvals.length, 7).setValues(jvals);
       }
     } else {
       var existingJ = {};
@@ -1252,7 +1584,7 @@ function gb_importDataPack_(pl) {
       }
       var jlast2 = journalSheet.getLastRow();
       if (jlast2 > 1) journalSheet.getRange(2, 1, jlast2, 7).clearContent();
-      if (jMerged.length) journalSheet.getRange(2, 1, 1 + jMerged.length, 7).setValues(jMerged);
+      if (jMerged.length) journalSheet.getRange(2, 1, jMerged.length, 7).setValues(jMerged);
     }
   }
 
@@ -1279,29 +1611,9 @@ function gb_importDataPack_(pl) {
   };
 }
 
-function gb_findPortalLookupCustomer_(name, list) {
-  var q = String(name || '').trim();
-  if (!q) return null;
-  for (var i = 0; i < list.length; i++) {
-    var c = list[i];
-    if (String(c.lineDisplayName || '').trim() === q || String(c.name || '').trim() === q) return c;
-  }
-  return null;
-}
-
-function gb_verifyLookupPin_(name, pin, list) {
-  var normalized = String(pin || '').replace(/\D/g, '').slice(0, 4);
-  if (!/^\d{4}$/.test(normalized)) return { ok: false, message: '請輸入 4 位數查單密碼' };
-  var entry = gb_findPortalLookupCustomer_(name, list || []);
-  var stored = entry ? String(entry.lookupPin || '').replace(/\D/g, '').slice(0, 4) : '';
-  var expected = /^\d{4}$/.test(stored) ? stored : heinaLookupPin_();
-  if (!/^\d{4}$/.test(expected)) {
-    return { ok: false, message: '查單密碼尚未設定，請聯絡團主' };
-  }
-  if (expected !== normalized) {
-    return { ok: false, message: '查單密碼錯誤' };
-  }
-  return { ok: true };
+function gb_credentialFailure_(message) {
+  var msg = String(message || '');
+  return msg === '目前密碼錯誤' || msg.indexOf('查無') === 0 || msg.indexOf('尚未設定') >= 0 || msg.indexOf('查單密碼錯誤') >= 0;
 }
 
 function gb_publicBootstrap_() {
@@ -1311,67 +1623,42 @@ function gb_publicBootstrap_() {
 
 function gb_customerBalanceMemos_(pl) {
   var name = pl && pl.customerName ? String(pl.customerName).trim() : '';
-  var pin = pl && pl.lookupPin != null ? String(pl.lookupPin) : '';
   if (!name) return { ok: false, message: '請輸入查詢名稱', memos: [] };
   var all = gb_fetchAllData_();
-  var auth = gb_verifyLookupPin_(name, pin, all.portalLookupCustomers || []);
+  var auth = gb_guardedAuthorize_(pl, all.groups || [], all.portalLookupCustomers || []);
   if (!auth.ok) return { ok: false, message: auth.message || '查單密碼錯誤', memos: [] };
-  var want = name.replace(/\s+/g, '').toLowerCase();
   var memos = [];
   var list = all.customerBalanceMemos || [];
   for (var i = 0; i < list.length; i++) {
     var m = list[i];
     if (!m) continue;
-    var n = String(m.customerName || '').replace(/\s+/g, '').toLowerCase();
-    if (n === want) memos.push(m);
+    if (gb_orderVisibleToLookup_(m.customerName, auth.authorizedKeys)) memos.push(m);
   }
   return { ok: true, memos: memos };
 }
 
-function gb_upsertPortalLookupPin_(list, name, newPin) {
-  var q = String(name || '').trim();
-  var pin = String(newPin || '').replace(/\D/g, '').slice(0, 4);
-  var next = [];
-  var found = false;
-  for (var i = 0; i < (list || []).length; i++) {
-    var c = list[i];
-    if (String(c.lineDisplayName || '').trim() === q || String(c.name || '').trim() === q) {
-      next.push({
-        name: c.name || q,
-        lineDisplayName: c.lineDisplayName || q,
-        lookupPin: pin
-      });
-      found = true;
-    } else {
-      next.push(c);
-    }
-  }
-  if (!found) next.push({ name: q, lineDisplayName: q, lookupPin: pin });
-  return next;
-}
-
 function gb_changeLookupPin_(pl) {
-  gb_initSheets_();
-  var all = gb_fetchAllData_();
   var name = pl && pl.customerName ? String(pl.customerName).trim() : '';
   var currentPin = pl && pl.currentPin != null ? String(pl.currentPin) : '';
   var newPin = pl && pl.newPin != null ? String(pl.newPin) : '';
   var confirmPin = pl && pl.confirmPin != null ? String(pl.confirmPin) : '';
   if (!name) return { ok: false, message: '請輸入查詢名稱' };
-  var cur = currentPin.replace(/\D/g, '').slice(0, 4);
-  var next = newPin.replace(/\D/g, '').slice(0, 4);
-  var confirm = confirmPin.replace(/\D/g, '').slice(0, 4);
-  if (!/^\d{4}$/.test(cur)) return { ok: false, message: '請輸入目前的 4 位數密碼' };
-  if (!/^\d{4}$/.test(next)) return { ok: false, message: '新密碼須為 4 位數字' };
-  if (next !== confirm) return { ok: false, message: '兩次新密碼不一致' };
-  if (next === cur) return { ok: false, message: '新密碼不可與目前密碼相同' };
-  var auth = gb_verifyLookupPin_(name, cur, all.portalLookupCustomers || []);
-  if (!auth.ok) return { ok: false, message: auth.message || '目前密碼錯誤' };
-  var nextList = gb_upsertPortalLookupPin_(all.portalLookupCustomers || [], name, next);
+  var gate = gb_lookupGuard_(name);
+  if (gate.locked) return { ok: false, message: gate.message };
+  gb_initSheets_();
+  var all = gb_fetchAllData_();
+  var verdict = gb_evaluateChangeLookupPin_(name, currentPin, newPin, confirmPin, all.portalLookupCustomers || []);
+  if (!verdict.ok) {
+    if (gb_credentialFailure_(verdict.message)) gb_noteLookupFail_(name);
+    return { ok: false, message: verdict.message || '目前密碼錯誤' };
+  }
+  var nextList = gb_replacePortalLookupPin_(all.portalLookupCustomers || [], name, verdict.lookupPin);
+  if (!nextList) return { ok: false, message: '查無此客人或尚未設定專屬密碼，請聯絡團主' };
   var ss = SpreadsheetApp.getActive();
   var settingsSheet = ss.getSheetByName(GB_SHEET_SETTINGS);
   gb_writePortalLookupCustomers_(settingsSheet, nextList);
-  return { ok: true, message: '查單密碼已更新', lookupPin: next };
+  gb_clearLookupFails_(name);
+  return { ok: true, message: verdict.message || '查單密碼已更新', lookupPin: verdict.lookupPin };
 }
 
 function gb_calcOrderBalance_(totalTwd, deposit, domesticShip, intlShip) {
@@ -2851,12 +3138,24 @@ function po_safeId_(v) {
   return String(v).trim();
 }
 
-function po_writeAllData_(groups) {
+function po_writeAllData_(pl) {
+  var groups = pl;
+  var confirmEmpty = false;
+  if (pl && !Array.isArray(pl)) {
+    groups = pl.groups || [];
+    confirmEmpty = !!pl.confirmEmptyOverwrite;
+  }
+  if (!Array.isArray(groups)) groups = [];
+
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   po_ensureSheets_(ss);
   var shG = ss.getSheetByName(PO_SHEET_GROUPS);
   var shO = ss.getSheetByName(PO_SHEET_ORDERS);
   var shI = ss.getSheetByName(PO_SHEET_ITEMS);
+  var hasRows = shG.getLastRow() > 1 || shO.getLastRow() > 1 || shI.getLastRow() > 1;
+  if (!groups.length && hasRows && !confirmEmpty) {
+    throw new Error('拒絕以空白資料覆蓋現有預購。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。');
+  }
   po_clearData_(shG);
   po_clearData_(shO);
   po_clearData_(shI);
@@ -3032,76 +3331,26 @@ function po_readAllData_() {
  */
 function po_customerLookup_(pl) {
   var rawQ = pl && pl.customerName ? String(pl.customerName).trim() : '';
-  var lookupPin = pl && pl.lookupPin != null ? String(pl.lookupPin) : '';
   var all = gb_fetchAllData_();
   var portalConfig = all.portalConfig || gb_buildPortalConfigFromSettings_({});
-  var matches = [];
   if (!rawQ) {
-    return { portalConfig: portalConfig, matches: matches };
+    return { portalConfig: portalConfig, matches: [] };
   }
 
   var groups = po_readAllData_();
-  var portalCustomers = all.portalLookupCustomers || [];
-  var qLower = rawQ.toLowerCase();
-  var candidateMap = {};
-
-  function addCandidate(n) {
-    var key = String(n || '').trim();
-    if (key) candidateMap[key] = true;
+  var auth = gb_guardedAuthorize_(pl, groups, all.portalLookupCustomers || []);
+  if (!auth.ok) {
+    return { portalConfig: portalConfig, matches: [], lookupError: auth.message || '查單密碼錯誤' };
   }
 
-  var gi, oi, g, o, orders, namePool = {}, i;
+  var matches = [];
+  var gi, oi, g, o, orders;
   for (gi = 0; gi < groups.length; gi++) {
     g = groups[gi];
     orders = g.orders || [];
     for (oi = 0; oi < orders.length; oi++) {
       o = orders[oi];
-      var cn = String(o.customerName || '').trim();
-      if (cn) namePool[cn] = true;
-      if (String(o.id || '').trim().toLowerCase() === qLower) addCandidate(cn);
-    }
-  }
-  for (var pi = 0; pi < portalCustomers.length; pi++) {
-    var pc = portalCustomers[pi];
-    if (pc && pc.name) namePool[String(pc.name).trim()] = true;
-    if (pc && pc.lineDisplayName) namePool[String(pc.lineDisplayName).trim()] = true;
-  }
-
-  var poolKeys = Object.keys(namePool);
-  for (i = 0; i < poolKeys.length; i++) {
-    if (poolKeys[i].toLowerCase() === qLower) addCandidate(poolKeys[i]);
-  }
-  if (Object.keys(candidateMap).length === 0) {
-    for (i = 0; i < poolKeys.length; i++) {
-      if (poolKeys[i].toLowerCase().indexOf(qLower) >= 0) addCandidate(poolKeys[i]);
-    }
-  }
-  if (Object.keys(candidateMap).length === 0) addCandidate(rawQ);
-
-  var authorized = {};
-  var candKeys = Object.keys(candidateMap);
-  var authOkAny = false;
-  var lastAuthMsg = '查單密碼錯誤';
-  for (i = 0; i < candKeys.length; i++) {
-    var auth = gb_verifyLookupPin_(candKeys[i], lookupPin, portalCustomers);
-    if (auth.ok) {
-      authorized[candKeys[i].toLowerCase()] = true;
-      authOkAny = true;
-    } else if (auth.message) {
-      lastAuthMsg = auth.message;
-    }
-  }
-  if (!authOkAny) {
-    return { portalConfig: portalConfig, matches: matches, lookupError: lastAuthMsg };
-  }
-
-  for (gi = 0; gi < groups.length; gi++) {
-    g = groups[gi];
-    orders = g.orders || [];
-    for (oi = 0; oi < orders.length; oi++) {
-      o = orders[oi];
-      var on = String(o.customerName || '').trim();
-      if (!authorized[on.toLowerCase()]) continue;
+      if (!gb_orderVisibleToLookup_(o.customerName, auth.authorizedKeys)) continue;
       matches.push({
         groupId: g.id,
         groupName: g.name,
@@ -3226,7 +3475,7 @@ function shub_put_(category, key, value, note) {
     }
   }
   if (row > 0) {
-    sh.getRange(row, 3, row, 5).setValues([[json, now, n]]);
+    sh.getRange(row, 3, 1, 3).setValues([[json, now, n]]);
   } else {
     sh.appendRow([cat, k, json, now, n]);
     row = sh.getLastRow();
@@ -3506,7 +3755,7 @@ function heinaPublicLanding_() {
     '<body style="font-family:system-ui,Segoe UI,Roboto,Noto Sans TC,sans-serif;margin:0;padding:24px;line-height:1.55;color:#111">' +
     '<h1 style="font-size:1.25rem;margin:0 0 12px">Heina 網站已改由 GitHub Pages 提供</h1>' +
     '<p style="margin:0 0 12px"><a href="' + safe + '">開啟顧客專區</a></p>' +
-    '<p style="margin:0;color:#555;font-size:14px">這支 Web App 網址（結尾 /exec）是資料 API。請在網站設定 VITE_GAS_URL 指向它，並把管理密碼、查單預設密碼、銀行查詢密碼放在指令碼屬性，不要寫進程式。</p>' +
+    '<p style="margin:0;color:#555;font-size:14px">這支 Web App 網址（結尾 /exec）是資料 API。請在網站設定 VITE_GAS_URL 指向它。管理密碼與銀行查詢密碼放在指令碼屬性，不要寫進程式。客人查單使用各自的 4 位數密碼。</p>' +
     '</body></html>';
   return HtmlService.createHtmlOutput(body)
     .setTitle('Heina Suite')
@@ -3544,6 +3793,12 @@ function heinaIsPublicAction_(mod, act) {
  * @return {*}
  */
 function unifiedApi(json) {
+  return heinaWithScriptLock_(function () {
+    return heinaUnifiedApiUnlocked_(json);
+  });
+}
+
+function heinaUnifiedApiUnlocked_(json) {
   var req = JSON.parse(json);
   var mod = req.module;
   var act = req.action;

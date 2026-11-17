@@ -14,9 +14,9 @@ Apps Script Web App（網址結尾 `/exec`）只當資料 API。瀏覽器以 `Co
 2. 部署 Web App：執行身分「我」、誰可以存取「任何人」。複製 `/exec` 網址。
 3. GitHub → Settings → Secrets and variables → Actions → **Variables** → `VITE_GAS_URL` = 該網址。推上 `master`（或 `main`）會建置並部署。改網址後要重跑 workflow。
 4. Apps Script → 專案設定 → **指令碼屬性**（不要寫進 Git）：
-   - `HEINA_ADMIN_PASSWORD` 後台登入
-   - `HEINA_LOOKUP_PIN` 四位數查單預設密碼（客人沒有個別密碼時）
-   - `HEINA_BANK_PASSWORD` 匯款帳號查詢密碼
+   - `HEINA_ADMIN_PASSWORD` 後台登入（請用全新密碼，不要沿用已出現在舊檔的那組）
+   - `HEINA_BANK_PASSWORD` 匯款帳號查詢密碼（同樣換成全新的）
+   - `HEINA_LOOKUP_PIN` 舊的共用查單密碼。請覆寫成新值或刪除。查單不再接受這組密碼；每位客人要在後台客人列表有自己的 4 位數密碼。
 5. 把 `deploy/apps-script-bundle/Code.gs`（由目前 `gas/*.gs` 合併）貼上或 `clasp push`，然後**重新部署** Web App。
 
 路由使用 hash（`#/lookup`、`#/shop`、`#/login`）。`public/404.html` 會把沒有 hash 的深連結轉回 hash，避免 GitHub Pages 的 404。

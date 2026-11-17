@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useApi } from '../../context/useApi'
 import type {
   BankJournalRow,
@@ -8,7 +7,6 @@ import type {
   GroupBuySavePayload,
   PortalConfig,
 } from '../../api/types'
-import { agentLog } from '../../debug/agentLog'
 import '../../ui.css'
 import './groupbuy.css'
 
@@ -46,7 +44,7 @@ function calcOrderTwd(items: GroupBuyOrder['items']) {
 export function GroupBuyPage() {
   const api = useApi()
   const [loading, setLoading] = useState(true)
-  const [appMode, setAppMode] = useState<'gateway' | 'admin'>('gateway')
+  const [loadedFromCloud, setLoadedFromCloud] = useState(false)
   const [groups, setGroups] = useState<GroupBuyGroup[]>([])
   const [bankJournal, setBankJournal] = useState<BankJournalRow[]>([])
   const [exchangeRate, setExchangeRate] = useState(0.22)
@@ -105,16 +103,8 @@ export function GroupBuyPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadedFromCloud(false)
     try {
-      // #region agent log
-      agentLog({
-        runId: 'baseline',
-        hypothesisId: 'H3',
-        location: 'GroupBuyPage.load',
-        message: 'GroupBuy load start',
-        data: { action: 'getAppData' },
-      })
-      // #endregion
       const data = await api.call<{
         groups: GroupBuyGroup[]
         bankJournal: BankJournalRow[]
@@ -126,6 +116,7 @@ export function GroupBuyPage() {
       setBankJournal(data.bankJournal || [])
       setExchangeRate(data.exchangeRate ?? 0.22)
       if (data.portalConfig) setPortalConfig((p) => ({ ...p, ...data.portalConfig }))
+      setLoadedFromCloud(true)
     } catch (e) {
       console.error(e)
       setStatusMsg('讀取失敗')
@@ -138,25 +129,41 @@ export function GroupBuyPage() {
     void load()
   }, [load])
 
-  useEffect(() => {
-    if (localStorage.getItem('heina_mode') === 'admin') setAppMode('admin')
-  }, [])
-
   const uploadToCloud = async () => {
+    if (!loadedFromCloud) {
+      setStatusMsg('讀取未成功，已停止同步，避免覆蓋雲端訂單')
+      setTimeout(() => setStatusMsg(''), 2500)
+      return
+    }
+    const realGroups = groups.filter((g) => g.id !== 'demo-123')
+    let confirmEmptyOverwrite = false
+    if (realGroups.length === 0) {
+      const ok = window.confirm(
+        bankJournal.length === 0
+          ? '目前沒有可同步的團務訂單，日記帳也是空的。確定要用空白資料覆蓋雲端訂單表與日記帳嗎？'
+          : '目前沒有可同步的團務訂單。確定要用空白資料覆蓋雲端訂單表嗎？',
+      )
+      if (!ok) {
+        setStatusMsg('已取消同步')
+        setTimeout(() => setStatusMsg(''), 2500)
+        return
+      }
+      confirmEmptyOverwrite = true
+    }
     setStatusMsg('同步中…')
     try {
-      const realGroups = groups.filter((g) => g.id !== 'demo-123')
       const payload: GroupBuySavePayload = {
         groups: realGroups,
         bankJournal,
         exchangeRate,
         portalConfig,
+        confirmEmptyOverwrite,
       }
       await api.call({ module: 'groupbuy', action: 'saveAppData', payload })
       setStatusMsg('已同步')
     } catch (e) {
       console.error(e)
-      setStatusMsg('同步失敗')
+      setStatusMsg(e instanceof Error ? e.message : '同步失敗')
     }
     setTimeout(() => setStatusMsg(''), 2500)
   }
@@ -269,33 +276,6 @@ export function GroupBuyPage() {
     )
   }
 
-  if (appMode === 'gateway') {
-    return (
-      <div className="gb-gateway">
-        <h1 className="gb-gateway-title">Heina Shop</h1>
-        <div className="gb-gateway-btns">
-          <button
-            type="button"
-            className="heina-btn"
-            onClick={() => {
-              const u = prompt('帳號')
-              const p = prompt('密碼')
-              if (u === 'admin' && p === '4502') {
-                setAppMode('admin')
-                localStorage.setItem('heina_mode', 'admin')
-              } else alert('帳號或密碼錯誤')
-            }}
-          >
-            管理員登入
-          </button>
-          <Link to="/lookup" className="heina-btn-outline gb-gateway-portal-link">
-            顧客自助查詢
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   /* ---------- Admin ---------- */
   return (
     <div className="gb-admin">
@@ -308,16 +288,6 @@ export function GroupBuyPage() {
           </button>
           <button type="button" className="heina-btn-outline" onClick={() => setIsSettingsOpen(true)}>
             系統設定
-          </button>
-          <button
-            type="button"
-            className="heina-btn-outline"
-            onClick={() => {
-              setAppMode('gateway')
-              localStorage.removeItem('heina_mode')
-            }}
-          >
-            登出
           </button>
         </div>
       </header>

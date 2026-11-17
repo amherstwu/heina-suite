@@ -229,6 +229,8 @@ export type GroupBuySavePayload = {
   paymentReports?: CustomerPaymentReport[]
   portalLookupCustomers?: PortalLookupCustomer[]
   customerBalanceMemos?: SharedCustomerBalanceMemo[]
+  /** 明確同意用空白訂單／日記帳覆蓋試算表上已有的資料 */
+  confirmEmptyOverwrite?: boolean
 }
 
 /** 顧客自助查單用：姓名／LINE 與 4 碼密碼 */

@@ -73,7 +73,7 @@ const defaultPortal = {
   websiteUrl: '',
   groupUrl: '',
   extraNote: '付款後請回傳後五碼；金額疑問請先聯絡代購主再匯款。',
-  lookupDesc: '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。',
+  lookupDesc: '請輸入在社群裡的完整名字或完整訂單編號，以及團主設定的 4 位數專屬查單密碼。沒有專屬密碼請私訊官方 LINE。',
   announcements: DEFAULT_ANNOUNCEMENTS,
   faqItems: FAQ_ITEMS,
   processSteps: PROCESS_STEPS,
@@ -313,9 +313,25 @@ export function createMockClient(): UnifiedClient {
         if (action === 'saveAppData') {
           const p = payload as GroupBuySavePayload
           const existing = loadGroupBuyStored()
+          const nextGroups = p.groups ?? []
+          const nextJournal = p.bankJournal ?? []
+          if (
+            nextGroups.length === 0 &&
+            (existing.groups?.length ?? 0) > 0 &&
+            !p.confirmEmptyOverwrite
+          ) {
+            throw new Error('拒絕以空白訂單覆蓋現有團務資料。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。')
+          }
+          if (
+            nextJournal.length === 0 &&
+            (existing.bankJournal?.length ?? 0) > 0 &&
+            !p.confirmEmptyOverwrite
+          ) {
+            throw new Error('拒絕以空白日記帳覆蓋現有帳務。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。')
+          }
           persistGroupBuy({
-            groups: p.groups,
-            bankJournal: p.bankJournal,
+            groups: nextGroups,
+            bankJournal: nextJournal,
             exchangeRate: p.exchangeRate,
             portalConfig: { ...defaultPortal, ...p.portalConfig },
             paymentReports: p.paymentReports ?? existing.paymentReports ?? [],
@@ -827,8 +843,14 @@ export function createMockClient(): UnifiedClient {
           return loadJson(KEYS.preorder, preorderDefault()) as T
         }
         if (action === 'save') {
-          const groups = payload as PreorderGroup[]
-          saveJson(KEYS.preorder, Array.isArray(groups) ? groups : [])
+          const body = payload as PreorderGroup[] | { groups?: PreorderGroup[]; confirmEmptyOverwrite?: boolean }
+          const groups = Array.isArray(body) ? body : (body?.groups ?? [])
+          const confirmEmpty = !Array.isArray(body) && !!body?.confirmEmptyOverwrite
+          const existing = loadJson(KEYS.preorder, preorderDefault()) as PreorderGroup[]
+          if (groups.length === 0 && existing.length > 0 && !confirmEmpty) {
+            throw new Error('拒絕以空白資料覆蓋現有預購。請先成功讀取後再同步；若確定要清空，請在畫面上再次確認。')
+          }
+          saveJson(KEYS.preorder, groups)
           return {
             ok: true,
             spreadsheetUrl: '',

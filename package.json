@@ -15,6 +15,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "npm run test:smoke",
+    "test:unit": "node --test test/gas-lookup-logic.test.mjs",
     "test:smoke": "tsc -b && vite build && vite build --config vite.config.gas.ts && node scripts/gas-web-finish.mjs && node scripts/bundle-apps-script-code.mjs",
     "ingest:user-xlsx": "tsx scripts/merge-user-xlsx.ts"
   },

@@ -12,6 +12,7 @@ const outFile = resolve(outDir, 'Code.gs')
 
 const parts = [
   'Secrets.gs',
+  'LookupLogic.gs',
   'GroupBuy.gs',
   'Ledger.gs',
   'LedgerSelfTest.gs',
@@ -64,7 +65,7 @@ const landing = `<!doctype html>
     <p style="color:#555;font-size:14px">
       這份 HTML 只是 Apps Script 的說明頁。正式畫面在 GitHub Pages。
       Web App 的 /exec 網址是資料 API：前端以 text/plain POST（或 JSONP）呼叫 unifiedApi。
-      管理密碼、查單預設密碼、銀行查詢密碼請放在指令碼屬性，不要寫進 HTML。
+      管理密碼與銀行查詢密碼請放在指令碼屬性，不要寫進 HTML。查單改為客人各自的 4 位數密碼，不再使用共用預設密碼。
     </p>
   </body>
 </html>
@@ -96,9 +97,10 @@ GitHub → Settings → Secrets and variables → Actions → Variables → VITE
    誰可以存取：任何人
 4. 複製結尾為 /exec 的網址，填進 VITE_GAS_URL，重新部署 Pages
 5. 專案設定 → 指令碼屬性（不要提交到 Git）：
-   HEINA_ADMIN_PASSWORD   後台登入密碼
-   HEINA_LOOKUP_PIN       4 位數查單預設密碼（客人沒有個別密碼時使用）
-   HEINA_BANK_PASSWORD    匯款帳號查詢密碼
+   HEINA_ADMIN_PASSWORD   後台登入密碼（必填，請用全新密碼）
+   HEINA_BANK_PASSWORD    匯款帳號查詢密碼（必填，請用全新密碼）
+   HEINA_LOOKUP_PIN       舊的共用查單密碼。請改成新值或刪除；程式已不再用它放行查單。
+                          每位客人要在後台客人列表設定自己的 4 位數查單密碼。
    HEINA_PAGES_URL        選用，預設為 GitHub Pages 網址
 
 index.html 是給舊版「用 Apps Script 開網站」的說明頁，不是 20MB 的前端。
