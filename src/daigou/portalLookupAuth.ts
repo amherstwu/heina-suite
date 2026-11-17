@@ -1,8 +1,12 @@
 import type { PortalLookupCustomer } from '../api/types'
 import type { Customer } from './types'
+import { customerNamesEqual } from '../modules/groupbuy/customerNameKey'
 
 export function normalizeLookupPin(raw: string): string {
-  return String(raw).replace(/\D/g, '').slice(0, 4)
+  return String(raw ?? '')
+    .normalize('NFKC')
+    .replace(/\D/g, '')
+    .slice(0, 4)
 }
 
 export function isValidLookupPin(pin: string): boolean {
@@ -34,10 +38,9 @@ export function findPortalLookupCustomer(
   queryName: string,
   list: PortalLookupCustomer[],
 ): PortalLookupCustomer | undefined {
-  const q = lookupNameKey(queryName)
-  if (!q) return undefined
+  if (!lookupNameKey(queryName)) return undefined
   return list.find(
-    (c) => lookupNameKey(c.lineDisplayName) === q || lookupNameKey(c.name) === q,
+    (c) => customerNamesEqual(c.lineDisplayName, queryName) || customerNamesEqual(c.name, queryName),
   )
 }
 
@@ -109,12 +112,10 @@ export function upsertPortalLookupPin(
   const pin = effectiveLookupPin(newPin)
   const next = [...(list ?? [])]
   const idx = next.findIndex(
-    (c) => lookupNameKey(c.lineDisplayName) === q || lookupNameKey(c.name) === q,
+    (c) => customerNamesEqual(c.lineDisplayName, q) || customerNamesEqual(c.name, q),
   )
   if (idx >= 0) {
     next[idx] = { ...next[idx], lookupPin: pin }
-    return next
   }
-  next.push({ name: q, lineDisplayName: q, lookupPin: pin })
   return next
 }

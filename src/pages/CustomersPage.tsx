@@ -201,7 +201,7 @@ export function CustomersPage() {
           <div className="min-w-0 flex-1">
             <h2 className="customers-import-title">從 LINE 群組／名單匯入</h2>
             <p className="customers-import-desc">
-              一行一位顯示名；或 Tab／逗號分隔「顯示名、本名、手機末三碼」。新客戶未填查單密碼時，正式站沿用 Apps Script 的預設密碼。
+              一行一位顯示名；或 Tab／逗號分隔「顯示名、本名、手機末三碼」。新客戶若沒填查單密碼，正式站無法用共用密碼代查，請事後補上 4 位數專屬密碼。
             </p>
             <textarea
               placeholder={'小葵\n阿哲 678\n熊貓哥\t王小明\t0912345678'}

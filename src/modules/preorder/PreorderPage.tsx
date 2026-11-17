@@ -25,6 +25,7 @@ export function PreorderPage() {
   const api = useApi()
   const [groups, setGroups] = useState<PreorderGroup[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadedFromCloud, setLoadedFromCloud] = useState(false)
   const [statusMsg, setStatusMsg] = useState('')
   const [activeTab, setActiveTab] = useState<'groups' | 'accounting'>('groups')
   const [viewGroupId, setViewGroupId] = useState<string | null>(null)
@@ -63,11 +64,14 @@ export function PreorderPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadedFromCloud(false)
     try {
       const data = await api.call<PreorderGroup[]>({ module: 'preorder', action: 'export' })
       setGroups(Array.isArray(data) ? data : [])
+      setLoadedFromCloud(true)
     } catch (e) {
       console.error(e)
+      setLoadedFromCloud(false)
       if (!isGasHost()) {
         setGroups(demoPreorderGroups())
         setStatusMsg('載入失敗，已顯示本機預購示範資料')
@@ -85,13 +89,28 @@ export function PreorderPage() {
   }, [load])
 
   const saveCloud = async () => {
+    if (!loadedFromCloud) {
+      setStatusMsg('讀取未成功，已停止同步，避免覆蓋雲端預購')
+      setTimeout(() => setStatusMsg(''), 2500)
+      return
+    }
+    let payload: PreorderGroup[] | { groups: PreorderGroup[]; confirmEmptyOverwrite: boolean } = groups
+    if (groups.length === 0) {
+      const ok = window.confirm('目前沒有預購資料。確定要用空白資料覆蓋雲端預購表嗎？')
+      if (!ok) {
+        setStatusMsg('已取消同步')
+        setTimeout(() => setStatusMsg(''), 2500)
+        return
+      }
+      payload = { groups, confirmEmptyOverwrite: true }
+    }
     setStatusMsg('同步中…')
     try {
-      await api.call({ module: 'preorder', action: 'save', payload: groups })
+      await api.call({ module: 'preorder', action: 'save', payload })
       setStatusMsg('已同步')
     } catch (e) {
       console.error(e)
-      setStatusMsg('同步失敗')
+      setStatusMsg(e instanceof Error ? e.message : '同步失敗')
     }
     setTimeout(() => setStatusMsg(''), 2500)
   }

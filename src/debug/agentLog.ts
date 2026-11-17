@@ -1,6 +1,5 @@
-/** Debug session NDJSON sink (session 92d6d5). No secrets / PII. */
+/** Debug session NDJSON sink. Production builds do not call the local ingest URL. */
 
-const INGEST = 'http://127.0.0.1:7784/ingest/a025bc28-b72b-4378-a301-608560e60fbc'
 const SESSION = '92d6d5'
 const MAX = 200
 
@@ -31,18 +30,23 @@ function pushBuffer(entry: Record<string, unknown>) {
   }
 }
 
-export function agentLog(p: AgentLogPayload) {
+function devAgentLog(p: AgentLogPayload) {
+  const ingest = 'http://127.0.0.1:7784/ingest/a025bc28-b72b-4378-a301-608560e60fbc'
   const entry = {
     sessionId: SESSION,
     timestamp: Date.now(),
     ...p,
   }
   pushBuffer(entry)
-  fetch(INGEST, {
+  fetch(ingest, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': SESSION },
     body: JSON.stringify(entry),
   }).catch(() => {})
+}
+
+export function agentLog(p: AgentLogPayload) {
+  if (import.meta.env.DEV) devAgentLog(p)
 }
 
 export function readAgentLogBuffer(): Record<string, unknown>[] {

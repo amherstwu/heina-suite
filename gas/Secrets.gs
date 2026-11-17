@@ -3,7 +3,9 @@
  * Do not put passwords or PINs in source. This file only names the keys.
  *
  *   HEINA_ADMIN_PASSWORD   organizer login (required before admin API calls)
- *   HEINA_LOOKUP_PIN       default 4-digit order lookup PIN when a customer has none stored
+ *   HEINA_LOOKUP_PIN       retired shared lookup PIN. Do not use it to open
+ *                          customer orders. Replace or delete the old value.
+ *                          Each customer needs their own 4-digit lookupPin.
  *   HEINA_BANK_PASSWORD    shared bank-account lookup password
  *   HEINA_PAGES_URL        optional public site URL (defaults to the GitHub Pages project URL)
  *   HEINA_ADMIN_SESSIONS   managed automatically (token → expiry). Do not edit by hand.
@@ -32,6 +34,11 @@ function heinaAdminPassword_() {
   return heinaScriptProp_(HEINA_PROP_ADMIN_PASSWORD);
 }
 
+/**
+ * Kept so a rotated HEINA_LOOKUP_PIN can still be read. Customer lookup must
+ * not fall back to this value — a shared PIN used to open every customer who
+ * had no personal PIN.
+ */
 function heinaLookupPin_() {
   var pin = heinaScriptProp_(HEINA_PROP_LOOKUP_PIN).replace(/\D/g, '').slice(0, 4);
   return /^\d{4}$/.test(pin) ? pin : '';
@@ -172,4 +179,23 @@ function heinaAdminChangePassword_(pl) {
   heinaClearAdminSessions_();
   heinaClearAdminFail_();
   return { ok: true, message: '已更新管理密碼，請重新登入' };
+}
+
+/**
+ * Exclusive lock around Web App handlers so a save cannot clear a sheet while
+ * another request reads or writes it. Apps Script locks are not re-entrant;
+ * helpers must not call this again.
+ */
+function heinaWithScriptLock_(fn) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (e) {
+    throw new Error('系統忙碌中，請稍後再試');
+  }
+  try {
+    return fn();
+  } finally {
+    lock.releaseLock();
+  }
 }

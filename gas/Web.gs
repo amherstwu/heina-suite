@@ -65,7 +65,7 @@ function heinaPublicLanding_() {
     '<body style="font-family:system-ui,Segoe UI,Roboto,Noto Sans TC,sans-serif;margin:0;padding:24px;line-height:1.55;color:#111">' +
     '<h1 style="font-size:1.25rem;margin:0 0 12px">Heina 網站已改由 GitHub Pages 提供</h1>' +
     '<p style="margin:0 0 12px"><a href="' + safe + '">開啟顧客專區</a></p>' +
-    '<p style="margin:0;color:#555;font-size:14px">這支 Web App 網址（結尾 /exec）是資料 API。請在網站設定 VITE_GAS_URL 指向它，並把管理密碼、查單預設密碼、銀行查詢密碼放在指令碼屬性，不要寫進程式。</p>' +
+    '<p style="margin:0;color:#555;font-size:14px">這支 Web App 網址（結尾 /exec）是資料 API。請在網站設定 VITE_GAS_URL 指向它。管理密碼與銀行查詢密碼放在指令碼屬性，不要寫進程式。客人查單使用各自的 4 位數密碼。</p>' +
     '</body></html>';
   return HtmlService.createHtmlOutput(body)
     .setTitle('Heina Suite')
@@ -103,6 +103,12 @@ function heinaIsPublicAction_(mod, act) {
  * @return {*}
  */
 function unifiedApi(json) {
+  return heinaWithScriptLock_(function () {
+    return heinaUnifiedApiUnlocked_(json);
+  });
+}
+
+function heinaUnifiedApiUnlocked_(json) {
   var req = JSON.parse(json);
   var mod = req.module;
   var act = req.action;

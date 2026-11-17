@@ -122,7 +122,7 @@ export function OpenGroupsPage({ embedded = false, variant = 'public' }: Props) 
       )
     } catch (e) {
       console.error(e)
-      setPinMsg('釘選儲存失敗，請稍後再試')
+      setPinMsg(e instanceof Error && e.message ? e.message : '釘選儲存失敗，請稍後再試')
     } finally {
       setPinSaving(false)
       window.setTimeout(() => setPinMsg(''), 2400)

@@ -132,7 +132,7 @@ export function PortalContentAdminPage() {
       )
     } catch (e) {
       console.error(e)
-      setStatusMsg('儲存失敗')
+      setStatusMsg(e instanceof Error ? e.message : '儲存失敗')
     } finally {
       setSaving(false)
     }
@@ -373,7 +373,7 @@ export function PortalContentAdminPage() {
                     rows={2}
                     value={portal.lookupDesc || ''}
                     onChange={(e) => setPortal({ ...portal, lookupDesc: e.target.value })}
-                    placeholder="請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。"
+                    placeholder="請輸入在社群裡的完整名字或完整訂單編號，以及團主設定的 4 位數專屬查單密碼。沒有專屬密碼請私訊官方 LINE。"
                   />
                 </label>
                 <label className="pca-field" style={{ gridColumn: '1 / -1' }}>

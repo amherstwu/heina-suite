@@ -152,7 +152,7 @@ export function CustomerLookupExperience({
         <h2 className="lk-card-title">查詢訂單</h2>
         <p className="lk-card-desc">
           {lookupDesc?.trim() ||
-            '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。'}
+            '請輸入在社群裡的完整名字或完整訂單編號，以及團主設定的 4 位數專屬查單密碼。沒有專屬密碼請私訊官方 LINE。'}
         </p>
         <form
           className="lk-search-form"
@@ -213,7 +213,7 @@ export function CustomerLookupExperience({
           {showChangePin ? (
             <div className="lk-pin-change-panel">
               <p className="lk-pin-change-hint">
-                請確認上方「查詢名稱」正確，輸入目前密碼後設定新的 4 位數密碼（修改後後台會同步更新）。
+                請確認上方「查詢名稱」與後台客人資料一致。須已有團主設定的專屬密碼，輸入目前密碼後才能改成新的 4 位數。
               </p>
               <label className="lk-pin-field">
                 <span className="lk-pin-label">目前密碼</span>

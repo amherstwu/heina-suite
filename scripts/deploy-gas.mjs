@@ -42,11 +42,12 @@ function writeDeployGuide(builtAt) {
 Apps Script Web App（結尾 /exec）是資料 API，不是網站本體。
 部署：執行身分「我」、存取權「任何人」。把 /exec 網址設成 GitHub Actions 變數 VITE_GAS_URL 後重新跑 workflow。
 
-指令碼屬性（不要提交到 Git）：
-  HEINA_ADMIN_PASSWORD
-  HEINA_LOOKUP_PIN
-  HEINA_BANK_PASSWORD
+指令碼屬性（不要提交到 Git，舊值已外洩，必須換成全新的）：
+  HEINA_ADMIN_PASSWORD   後台登入密碼
+  HEINA_BANK_PASSWORD    匯款帳號查詢密碼
+  HEINA_LOOKUP_PIN       不再作為客人共用查單密碼。請覆寫或刪除舊值。
   HEINA_PAGES_URL（選用）
+客人查單改為「完整暱稱或訂單編號 + 該客人自己的 4 位數密碼」。
 
 Code.gs 由 gas/*.gs 合併而來。index.html 只是說明頁，請顧客開 GitHub Pages。
 Hash 路由：#/lookup、#/shop、#/login、#/dashboard、#/procurement、#/integrations。
