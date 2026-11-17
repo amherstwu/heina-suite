@@ -13,11 +13,7 @@ import {
   customerMatchesBankLastFiveQuery,
   normalizeBankLastFiveCodes,
 } from '../daigou/customerBankLastFive'
-import {
-  DEFAULT_LOOKUP_PIN,
-  normalizeLookupPin,
-  isValidLookupPin,
-} from '../daigou/portalLookupAuth'
+import { normalizeLookupPin, isValidLookupPin } from '../daigou/portalLookupAuth'
 import { CustomerBankLastFiveEditor } from '../components/customers/CustomerBankLastFiveEditor'
 import './customersPage.css'
 
@@ -72,7 +68,7 @@ export function CustomersPage() {
     totalOrders: 0,
     totalUnpaidBalance: 0,
     notes: '',
-    lookupPin: DEFAULT_LOOKUP_PIN,
+    lookupPin: '',
     bankLastFiveCodes: [],
   })
 
@@ -150,7 +146,7 @@ export function CustomersPage() {
       totalOrders: Number(form.totalOrders) || 0,
       totalUnpaidBalance: Number(form.totalUnpaidBalance) || 0,
       notes: form.notes || '',
-      lookupPin: isValidLookupPin(pin) ? pin : DEFAULT_LOOKUP_PIN,
+      lookupPin: isValidLookupPin(pin) ? pin : undefined,
       bankLastFiveCodes: normalizeBankLastFiveCodes(form.bankLastFiveCodes),
     })
     setOpen(false)
@@ -160,7 +156,7 @@ export function CustomersPage() {
     <div className="customers-page">
       <PageHeader
         title="客戶列表"
-        subtitle={`可搜尋姓名、LINE、末三碼、銀行後五碼；查單密碼預設 ${DEFAULT_LOOKUP_PIN}`}
+        subtitle="可搜尋姓名、LINE、末三碼、銀行後五碼。查單密碼為 4 位數字；未填則沿用伺服器預設（不寫在網站程式裡）。"
         action={
           <>
             <Btn variant="secondary" onClick={exportBalances}>
@@ -205,7 +201,7 @@ export function CustomersPage() {
           <div className="min-w-0 flex-1">
             <h2 className="customers-import-title">從 LINE 群組／名單匯入</h2>
             <p className="customers-import-desc">
-              一行一位顯示名；或 Tab／逗號分隔「顯示名、本名、手機末三碼」。新客戶查單密碼預設 {DEFAULT_LOOKUP_PIN}。
+              一行一位顯示名；或 Tab／逗號分隔「顯示名、本名、手機末三碼」。新客戶未填查單密碼時，正式站沿用 Apps Script 的預設密碼。
             </p>
             <textarea
               placeholder={'小葵\n阿哲 678\n熊貓哥\t王小明\t0912345678'}
@@ -328,13 +324,13 @@ export function CustomersPage() {
             onChange={(next) => setForm((f) => ({ ...f, bankLastFiveCodes: next }))}
           />
           <label className="block">
-            <span className="text-meta font-semibold text-ds-text-secondary">查單密碼（4 位數，預設 {DEFAULT_LOOKUP_PIN}）</span>
+            <span className="text-meta font-semibold text-ds-text-secondary">查單密碼（4 位數，可留空）</span>
             <input
               className="mt-2 w-full max-w-[8rem] font-mono text-lg tracking-widest text-ds-text"
               type="text"
               inputMode="numeric"
               maxLength={4}
-              placeholder={DEFAULT_LOOKUP_PIN}
+              placeholder="4 位數"
               value={form.lookupPin ?? ''}
               onChange={(e) => setForm((f) => ({ ...f, lookupPin: normalizeLookupPin(e.target.value) }))}
             />

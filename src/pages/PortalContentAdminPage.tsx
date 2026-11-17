@@ -373,7 +373,7 @@ export function PortalContentAdminPage() {
                     rows={2}
                     value={portal.lookupDesc || ''}
                     onChange={(e) => setPortal({ ...portal, lookupDesc: e.target.value })}
-                    placeholder="請輸入在社群裡的名字，若有改名或無法查詢請私訊官方LINE，預設密碼 1314，可自行修改"
+                    placeholder="請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。"
                   />
                 </label>
                 <label className="pca-field" style={{ gridColumn: '1 / -1' }}>

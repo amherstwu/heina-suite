@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import type { GroupBuyAppData, GroupBuyGroup, GroupBuySavePayload, PublicGroupCatalogItem } from '../../api/types'
-import { isAdminSessionValid } from '../../auth/adminSession'
+import { getAdminToken, isAdminSessionValid } from '../../auth/adminSession'
+import { hasRemoteGas } from '../../config/gasEndpoint'
 import { useApi } from '../../context/useApi'
 import { useDaigouStore } from '../../daigou/store'
 import { normalizeGroupChannel } from '../../modules/groupbuy/groupBuyHubAnalytics'
@@ -34,7 +35,11 @@ export function OpenGroupsPage({ embedded = false, variant = 'public' }: Props) 
   const api = useApi()
   const navigate = useNavigate()
   const authEnabled = useDaigouStore((s) => s.settings.adminAuthEnabled !== false)
-  const staffOk = authEnabled ? isAdminSessionValid() : true
+  const staffOk = hasRemoteGas()
+    ? isAdminSessionValid() && Boolean(getAdminToken())
+    : authEnabled
+      ? isAdminSessionValid()
+      : true
   const canEdit = variant === 'admin' && staffOk
   const [searchParams, setSearchParams] = useSearchParams()
   const highlightId = searchParams.get('group')?.trim() || ''

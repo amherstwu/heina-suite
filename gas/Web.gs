@@ -1,44 +1,75 @@
 /**
- * Web entry — bound to container spreadsheet.
- * 優先載入 Html 檔名 index（建置產物 deploy/apps-script-bundle/index.html 全文貼上）；
- * 若專案內尚為舊檔名 UI，會自動改載 UI。
+ * Web App entry.
+ * The React app is hosted on GitHub Pages. This deployment is the data API.
+ *
+ * Apps Script cannot set CORS headers. Browsers on another origin must:
+ *   - POST the JSON body with Content-Type text/plain;charset=utf-8 (no preflight), or
+ *   - GET ?callback=NAME&payload=... (JSONP) for smaller requests.
+ * Deploy the Web App as Execute as: Me, Who has access: Anyone.
  */
-function doGet() {
-  return heinaHtmlOutputFromFile_();
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.payload || p.callback) {
+    return heinaApiOutput_(p.payload || '', p.callback || '');
+  }
+  try {
+    return HtmlService.createHtmlOutputFromFile('index')
+      .setTitle('Heina Suite')
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  } catch (err) {
+    return heinaPublicLanding_();
+  }
+}
+
+function doPost(e) {
+  var body = '';
+  if (e && e.postData && e.postData.contents) body = String(e.postData.contents);
+  else if (e && e.parameter && e.parameter.payload) body = String(e.parameter.payload);
+  return heinaApiOutput_(body, '');
 }
 
 /**
- * @return {GoogleAppsScript.HTML.HtmlOutput}
+ * @param {string} json
+ * @param {string} callback JSONP callback name, or empty for JSON
+ * @return {GoogleAppsScript.Content.TextOutput}
  */
-function heinaHtmlOutputFromFile_() {
-  var names = ['index', 'UI'];
-  var lastMsg = '';
-  for (var i = 0; i < names.length; i++) {
-    try {
-      return HtmlService.createHtmlOutputFromFile(names[i])
-        .setTitle('Heina Suite')
-        .setSandboxMode(HtmlService.SandboxMode.IFRAME)
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-    } catch (e) {
-      lastMsg = e && e.message ? String(e.message) : String(e);
-    }
+function heinaApiOutput_(json, callback) {
+  var out;
+  try {
+    if (!json) throw new Error('缺少請求內容');
+    out = { ok: true, result: unifiedApi(String(json)) };
+  } catch (err) {
+    out = { ok: false, error: err && err.message ? String(err.message) : String(err) };
   }
+  var text = JSON.stringify(out);
+  var cb = String(callback || '');
+  if (cb) {
+    if (!/^[A-Za-z_$][\w$]{0,63}$/.test(cb)) {
+      text = JSON.stringify({ ok: false, error: 'invalid callback' });
+      return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(cb + '(' + text + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);
+}
+
+function heinaPublicLanding_() {
+  var url = heinaPagesUrl_();
+  var safe = heinaEscapeHtml_(url);
   var body =
-    '<div style="font-family:system-ui,Segoe UI,Roboto,Noto Sans TC,sans-serif;padding:20px;max-width:42rem;line-height:1.55;color:#111">' +
-    '<h1 style="font-size:1.15rem;margin:0 0 12px">找不到前端 HTML（index 或 UI）</h1>' +
-    '<ol style="margin:0 0 14px;padding-left:1.25rem">' +
-    '<li>在本機 <code>heina-suite</code> 執行 <code>npm run build:gas</code></li>' +
-    '<li>開啟 <code>deploy/apps-script-bundle/index.html</code>，全選複製</li>' +
-    '<li>Apps Script → ＋ → <b>HTML</b> → 檔名設為 <b>index</b>（編輯器顯示 index.html）→ 貼上並儲存</li>' +
-    '<li>重新部署「網路應用程式」後再開網址</li>' +
-    '</ol>' +
-    '<p style="margin:0;font-size:13px;color:#555">若沿用舊專案，Html 檔名也可為 <b>UI</b>（本程式會自動嘗試）。</p>' +
-    '<p style="margin:14px 0 0;font-size:12px;color:#888">Apps Script 訊息：' +
-    heinaEscapeHtml_(lastMsg) +
-    '</p>' +
-    '</div>';
-  return HtmlService.createHtmlOutput(body).setTitle('Heina Suite — 設定提示');
+    '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>Heina Suite</title></head>' +
+    '<body style="font-family:system-ui,Segoe UI,Roboto,Noto Sans TC,sans-serif;margin:0;padding:24px;line-height:1.55;color:#111">' +
+    '<h1 style="font-size:1.25rem;margin:0 0 12px">Heina 網站已改由 GitHub Pages 提供</h1>' +
+    '<p style="margin:0 0 12px"><a href="' + safe + '">開啟顧客專區</a></p>' +
+    '<p style="margin:0;color:#555;font-size:14px">這支 Web App 網址（結尾 /exec）是資料 API。請在網站設定 VITE_GAS_URL 指向它，並把管理密碼、查單預設密碼、銀行查詢密碼放在指令碼屬性，不要寫進程式。</p>' +
+    '</body></html>';
+  return HtmlService.createHtmlOutput(body)
+    .setTitle('Heina Suite')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function heinaEscapeHtml_(s) {
@@ -49,10 +80,27 @@ function heinaEscapeHtml_(s) {
     .replace(/"/g, '&quot;');
 }
 
+/** Actions a signed-out browser may call. Everything else needs an admin token. */
+function heinaIsPublicAction_(mod, act) {
+  if (mod === 'auth' && act === 'login') return true;
+  if (mod === 'groupbuy') {
+    if (act === 'customerLookup') return true;
+    if (act === 'changeLookupPin') return true;
+    if (act === 'submitPaymentReport') return true;
+    if (act === 'listPublicGroups') return true;
+    if (act === 'verifyBankViewerAccess') return true;
+    if (act === 'publicBootstrap') return true;
+    if (act === 'customerBalanceMemos') return true;
+  }
+  if (mod === 'preorder' && act === 'customerLookup') return true;
+  if (mod === 'storefront' && act === 'getCatalog') return true;
+  return false;
+}
+
 /**
- * Single RPC for the unified SPA.
- * @param {string} json JSON.stringify({ module, action, payload })
- * @return {*} depends on action
+ * Single RPC for the SPA.
+ * @param {string} json JSON.stringify({ module, action, payload, adminToken? })
+ * @return {*}
  */
 function unifiedApi(json) {
   var req = JSON.parse(json);
@@ -60,6 +108,17 @@ function unifiedApi(json) {
   var act = req.action;
   var pl = req.payload;
 
+  if (!heinaIsPublicAction_(mod, act)) {
+    if (!heinaAdminTokenValid_(req.adminToken)) {
+      throw new Error('需要管理員登入');
+    }
+  }
+
+  if (mod === 'auth') {
+    if (act === 'login') return heinaAdminLogin_(pl);
+    if (act === 'changePassword') return heinaAdminChangePassword_(pl);
+    if (act === 'session') return { ok: heinaAdminTokenValid_(req.adminToken) };
+  }
   if (mod === 'groupbuy') {
     if (act === 'getAppData') return gb_fetchAllData_();
     if (act === 'saveAppData') return gb_performSave_(pl);
@@ -73,6 +132,8 @@ function unifiedApi(json) {
     if (act === 'updatePaymentReportLineFlags') return gb_updatePaymentReportLineFlags_(pl);
     if (act === 'supplementPaymentReport') return gb_supplementPaymentReport_(pl);
     if (act === 'listPublicGroups') return gb_publicGroupCatalog_();
+    if (act === 'publicBootstrap') return gb_publicBootstrap_();
+    if (act === 'customerBalanceMemos') return gb_customerBalanceMemos_(pl);
     if (act === 'getBankViewerAdmin') return gb_getBankViewerAdmin_();
     if (act === 'saveBankViewer') return gb_saveBankViewer_(pl);
     if (act === 'verifyBankViewerAccess') return gb_verifyBankViewerAccess_(pl);

@@ -57,7 +57,8 @@ import {
 } from './app/lazyPages'
 import { AgentDebugPanel } from './debug/AgentDebugPanel'
 import { agentLog } from './debug/agentLog'
-import { viteAppBasename } from './utils/viteAppBasename'
+import { isGasHost } from './adapters/gas'
+import { hasRemoteGas } from './config/gasEndpoint'
 import { RouteFallback } from './components/app/RouteFallback'
 /** 新增頂層 `<Route path>` 時請同步 `src/router/hashPathPrefixes.ts`（path→hash 深連結）。 */
 
@@ -83,9 +84,34 @@ function VisualTheme() {
   return null
 }
 
+function LocalPreviewBanner() {
+  if (isGasHost() || hasRemoteGas()) return null
+  return (
+    <p
+      role="status"
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 80,
+        margin: 0,
+        padding: '8px 12px',
+        fontSize: 13,
+        lineHeight: 1.45,
+        textAlign: 'center',
+        background: '#fff7ed',
+        color: '#9a3412',
+        borderBottom: '1px solid #fed7aa',
+      }}
+    >
+      尚未設定 Apps Script 網址（VITE_GAS_URL）。這台裝置只看得到瀏覽器裡的預覽資料，不是正式試算表。
+    </p>
+  )
+}
+
 export default function App() {
   return (
-    <Router basename={viteAppBasename()}>
+    <Router>
+      <LocalPreviewBanner />
       <VisualTheme />
       <PortalLookupSyncBridge />
       <DebugRouteTrace />

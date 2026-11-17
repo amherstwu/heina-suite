@@ -25,7 +25,9 @@ import {
   lookupNameKey,
   upsertPortalLookupPin,
   validateChangeLookupPin,
+  verifyLookupAccess,
 } from '../daigou/portalLookupAuth'
+import { openSharedBalanceMemosForName } from '../daigou/portalLookupSync'
 import {
   authorizeCustomerLookupQuery,
   orderMatchesAuthorizedNames,
@@ -71,7 +73,7 @@ const defaultPortal = {
   websiteUrl: '',
   groupUrl: '',
   extraNote: '付款後請回傳後五碼；金額疑問請先聯絡代購主再匯款。',
-  lookupDesc: '請輸入在社群裡的名字，若有改名或無法查詢請私訊官方LINE，預設密碼 1314，可自行修改',
+  lookupDesc: '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。',
   announcements: DEFAULT_ANNOUNCEMENTS,
   faqItems: FAQ_ITEMS,
   processSteps: PROCESS_STEPS,
@@ -164,6 +166,20 @@ export function createMockClient(): UnifiedClient {
       if (module === 'groupbuy') {
         if (action === 'getAppData') {
           return toPublicGroupBuyData(loadGroupBuyStored()) as T
+        }
+        if (action === 'publicBootstrap') {
+          const data = loadGroupBuyStored()
+          return { ok: true, bankViewer: stripBankViewerForPublic(data.bankViewerFull) } as T
+        }
+        if (action === 'customerBalanceMemos') {
+          const pl = payload as { customerName?: string; lookupPin?: string }
+          const data = mergeGroupBuyAppData(loadGroupBuyStored())
+          const auth = verifyLookupAccess(pl?.customerName ?? '', pl?.lookupPin ?? '', data.portalLookupCustomers)
+          if (!auth.ok) return { ok: false, message: auth.error, memos: [] } as T
+          return {
+            ok: true,
+            memos: openSharedBalanceMemosForName(data.customerBalanceMemos, pl?.customerName ?? ''),
+          } as T
         }
         if (action === 'getBankViewerAdmin') {
           const data = loadGroupBuyStored()

@@ -23,7 +23,7 @@ import {
   tierDef,
   tierFromSpend,
 } from './membershipTiers'
-import { DEFAULT_LOOKUP_PIN, effectiveLookupPin, normalizeLookupPin } from './portalLookupAuth'
+import { isValidLookupPin, normalizeLookupPin } from './portalLookupAuth'
 import { syncPortalLookupCustomersToGroupbuy } from './portalLookupSync'
 import { buildOrderFinancials } from './logic/orderCalc'
 import { parseLineGroupMemberList } from './lineCustomerImport'
@@ -274,7 +274,10 @@ export const useDaigouStore = create<DaigouStore>()(
           membershipTierId: c.membershipTierId ?? 'regular',
           membershipSpendTwd: c.membershipSpendTwd ?? 0,
           membershipTierLocked: c.membershipTierLocked ?? false,
-          lookupPin: effectiveLookupPin(c.lookupPin),
+          lookupPin: (() => {
+            const pin = normalizeLookupPin(c.lookupPin || '')
+            return isValidLookupPin(pin) ? pin : undefined
+          })(),
         })
         set((s) => ({ ...s, customers: [nc, ...s.customers] }))
         syncPortalLookupCustomersToGroupbuy(get().customers)
@@ -317,7 +320,7 @@ export const useDaigouStore = create<DaigouStore>()(
               membershipTierId: 'regular',
               membershipSpendTwd: 0,
               membershipTierLocked: false,
-              lookupPin: DEFAULT_LOOKUP_PIN,
+              lookupPin: undefined,
             }),
           )
         }
@@ -1537,9 +1540,7 @@ export const useDaigouStore = create<DaigouStore>()(
             const merged = { ...c.settings, ...(p.settings ?? {}) }
             if (!merged.theme) merged.theme = 'light'
             if (!merged.colorPreset) merged.colorPreset = 'default'
-            const h = String(merged.adminPasswordHash ?? '').trim()
-            if (!h && merged.adminAuthEnabled !== false) {
-              merged.adminPasswordHash = defaultDaigouSettings.adminPasswordHash ?? ''
+            if (merged.adminAuthEnabled !== false) {
               merged.adminSessionHours = merged.adminSessionHours ?? defaultDaigouSettings.adminSessionHours
               merged.adminLoginMaxAttempts =
                 merged.adminLoginMaxAttempts ?? defaultDaigouSettings.adminLoginMaxAttempts

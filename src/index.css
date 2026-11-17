@@ -149,6 +149,7 @@
 
   body {
     @apply min-h-dvh;
+    overflow-x: clip;
   }
 
   button,

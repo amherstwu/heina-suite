@@ -1,6 +1,8 @@
 /**
- * Vite `base` → React Router `basename`（僅當為子路徑時非空）。
- * `base: './'` 時常為 `./` 或 `/`，此時不設 basename。
+ * Vite `base` is the asset prefix (GitHub Pages: `/heina-suite/`).
+ * This app uses HashRouter. Do NOT pass that prefix as React Router `basename`:
+ * hash paths are `/lookup`, not `/heina-suite/lookup`, so a subdirectory basename
+ * would make every route miss.
  */
 export function viteAppBasename(): string | undefined {
   const raw = import.meta.env.BASE_URL ?? '/'

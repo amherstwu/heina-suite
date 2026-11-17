@@ -1,22 +1,24 @@
 {
-  "builtAt": "2026-06-02T13:53:41.525Z",
+  "builtAt": "2026-11-17T10:18:38.512Z",
   "package": "heina-suite",
-  "command": "npm run deploy",
+  "command": "node scripts/bundle-apps-script-code.mjs",
+  "hosting": "github-pages",
   "files": {
     "index.html": {
-      "bytes": 1499705,
-      "sha256Prefix": "e597d1d97694e242",
-      "mtime": "2026-06-02T13:53:40.842Z"
+      "bytes": 806,
+      "sha256Prefix": "7801091e6dc4f9e1",
+      "mtime": "2026-11-17T10:18:32.299Z"
     },
     "Code.gs": {
-      "bytes": 53884,
-      "sha256Prefix": "ca2339b2554d2447",
-      "mtime": "2026-06-02T13:53:41.495Z"
+      "bytes": 126687,
+      "sha256Prefix": "ec75b8bb7899360f",
+      "mtime": "2026-11-17T10:18:32.295Z"
     }
   },
   "checks": [
     "verify-app-routes",
-    "diagnose-procurement",
-    "verify-seed"
+    "tsc",
+    "vite build",
+    "check-public-secrets"
   ]
 }

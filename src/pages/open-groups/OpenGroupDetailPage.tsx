@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import type { GroupBuyAppData, GroupBuyChannel, GroupBuySavePayload, PublicGroupCatalogItem } from '../../api/types'
-import { isAdminSessionValid } from '../../auth/adminSession'
+import { getAdminToken, isAdminSessionValid } from '../../auth/adminSession'
+import { hasRemoteGas } from '../../config/gasEndpoint'
 import { GroupImageGalleryEditor } from '../../components/groups/GroupImageGalleryEditor'
 import { useApi } from '../../context/useApi'
 import { useDaigouStore } from '../../daigou/store'
@@ -54,7 +55,11 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
   const api = useApi()
   const authEnabled = useDaigouStore((s) => s.settings.adminAuthEnabled !== false)
   /** 客人公開頁不顯示管理；僅帶 manage=1 且具後台身分時才開啟 */
-  const staffOk = authEnabled ? isAdminSessionValid() : true
+  const staffOk = hasRemoteGas()
+    ? isAdminSessionValid() && Boolean(getAdminToken())
+    : authEnabled
+      ? isAdminSessionValid()
+      : true
   const canEdit = staffOk && searchParams.get('manage') === '1'
 
   const [group, setGroup] = useState<PublicGroupCatalogItem | null>(null)

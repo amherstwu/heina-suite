@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useDaigouStore } from '../../daigou/store'
-import { isAdminSessionValid } from '../../auth/adminSession'
+import { getAdminToken, isAdminSessionValid } from '../../auth/adminSession'
+import { hasRemoteGas } from '../../config/gasEndpoint'
 
 /**
  * 包住 ProShell 後台：未登入導向 /login。
@@ -11,6 +12,11 @@ export function RequireAdminAuth() {
   const loc = useLocation()
   const settings = useDaigouStore((s) => s.settings)
   const enabled = settings.adminAuthEnabled !== false
+
+  if (hasRemoteGas()) {
+    if (isAdminSessionValid() && getAdminToken()) return <Outlet />
+    return <Navigate to="/login" replace state={{ from: loc.pathname + loc.search }} />
+  }
 
   if (!enabled) return <Outlet />
 

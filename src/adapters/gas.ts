@@ -1,5 +1,6 @@
 import type { UnifiedClient } from '../api/client'
 import type { UnifiedRequest } from '../api/types'
+import { attachAdminToken } from '../auth/attachAdminToken'
 
 declare global {
   interface Window {
@@ -26,7 +27,7 @@ export function createGasClient(): UnifiedClient {
           reject(new Error('google.script.run 不可用（請以 Web App 開啟）'))
           return
         }
-        const json = JSON.stringify(req)
+        const json = JSON.stringify(attachAdminToken(req))
         g.withSuccessHandler((res: unknown) => resolve(res as T))
           .withFailureHandler((err: Error) => reject(err))
           .unifiedApi(json)

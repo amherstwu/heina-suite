@@ -2,7 +2,7 @@
  * GAS 單檔建置收尾：vite-plugin-singlefile 依「來源檔名」輸出 gas-app-entry.html，此處更名為 index.html；
  * 並在檔首標註「複製到 Apps Script」說明。若舊版仍產出 UI.html，建置後刪除以免混淆。
  */
-import { readFileSync, writeFileSync, existsSync, unlinkSync, renameSync, copyFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, unlinkSync, renameSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -35,10 +35,5 @@ if (existsSync(legacyUi)) {
   console.log('gas-web-finish: removed legacy gas-web/UI.html')
 }
 
-/** 與 Code.gs 並列：整專案給 Apps Script 只需複製 deploy/apps-script-bundle 內這兩個檔 */
-const bundleDir = resolve(root, 'deploy', 'apps-script-bundle')
-const bundleIndex = resolve(bundleDir, 'index.html')
-mkdirSync(bundleDir, { recursive: true })
-copyFileSync(indexPath, bundleIndex)
 console.log('gas-web-finish: OK', indexPath)
-console.log('gas-web-finish: bundle copy →', bundleIndex)
+console.log('gas-web-finish: bundle index.html is the Pages pointer written by bundle-apps-script-code.mjs')

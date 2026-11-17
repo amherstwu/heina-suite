@@ -7,11 +7,7 @@ import {
   ORDER_BUCKET_LABELS,
   type DaigouOrderBucket,
 } from '../../modules/groupbuy/v50Utils'
-import {
-  DEFAULT_LOOKUP_PIN,
-  isValidLookupPin,
-  normalizeLookupPin,
-} from '../../daigou/portalLookupAuth'
+import { isValidLookupPin, normalizeLookupPin } from '../../daigou/portalLookupAuth'
 import { useApi } from '../../context/useApi'
 import { StaffLookupMemberPreview } from '../staffLookup/StaffLookupMemberPreview'
 import '../staffLookup/StaffLookupMemberPreview.css'
@@ -156,7 +152,7 @@ export function CustomerLookupExperience({
         <h2 className="lk-card-title">查詢訂單</h2>
         <p className="lk-card-desc">
           {lookupDesc?.trim() ||
-            `請輸入在社群裡的名字，若有改名或無法查詢請私訊官方LINE，預設密碼 ${DEFAULT_LOOKUP_PIN}，可自行修改`}
+            '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。'}
         </p>
         <form
           className="lk-search-form"
@@ -333,6 +329,7 @@ export function CustomerLookupExperience({
               {orderBucketTab === 'pending' ? (
                 <CustomerPaymentReportPanel
                   customerName={lineDisplayName}
+                  lookupPin={lookupPin}
                   orders={bucketOrders}
                   groupsById={previewData.groupsById}
                   onSubmitted={() => void onSearch()}

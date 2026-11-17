@@ -17,7 +17,7 @@ import {
 import { hasOpenBalanceMemos } from '../daigou/customerBalanceMemo'
 import { normalizeBankLastFiveCodes } from '../daigou/customerBankLastFive'
 import { CustomerBankLastFiveEditor } from '../components/customers/CustomerBankLastFiveEditor'
-import { isValidLookupPin, normalizeLookupPin, effectiveLookupPin, DEFAULT_LOOKUP_PIN } from '../daigou/portalLookupAuth'
+import { isValidLookupPin, normalizeLookupPin, effectiveLookupPin } from '../daigou/portalLookupAuth'
 
 function formatJoinedAt(ms?: number) {
   if (!ms || !Number.isFinite(ms) || ms <= 0) return '未記錄'
@@ -170,7 +170,7 @@ export function CustomerDetailPage() {
         <Card className="!p-5 md:col-span-3">
           <p className="text-meta font-semibold text-ds-text-secondary">訂單自助查詢密碼</p>
           <p className="mt-1 text-sm text-ds-text-secondary">
-            客人在「訂單自助查詢」須輸入此 4 位數密碼（未設定時預設 {DEFAULT_LOOKUP_PIN}）。客人自行修改後會同步到此處。
+            客人在「訂單自助查詢」須輸入此 4 位數密碼。未填時，正式站改由 Apps Script 指令碼屬性的預設密碼驗證，網站程式不保存該預設值。
           </p>
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <label className="text-meta font-semibold text-ds-text-secondary">
@@ -205,7 +205,7 @@ export function CustomerDetailPage() {
               </span>
             ) : (
               <span className="text-meta font-mono font-semibold tracking-widest" style={{ color: '#6a635c' }}>
-                目前為預設：{DEFAULT_LOOKUP_PIN}
+                尚未個別設定（正式站使用伺服器預設）
               </span>
             )}
           </div>

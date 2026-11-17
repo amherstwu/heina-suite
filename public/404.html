@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Heina Suite</title>
+    <script>
+      // GitHub Pages has no SPA rewrite. Send deep links to the hash router.
+      ;(function () {
+        var base = '/heina-suite/'
+        var path = window.location.pathname || '/'
+        var rest = path.indexOf(base) === 0 ? path.slice(base.length) : path.replace(/^\//, '')
+        rest = rest.replace(/^index\.html\/?/, '').replace(/\/$/, '')
+        var hash = window.location.hash
+        if (!hash || hash === '#') {
+          var route = rest ? '/' + rest.replace(/^\//, '') : '/lookup'
+          hash = '#' + route + (window.location.search || '')
+        }
+        window.location.replace(base + hash)
+      })()
+    </script>
+  </head>
+  <body>
+    <p style="font-family: sans-serif; padding: 24px">正在前往 Heina…</p>
+  </body>
+</html>

@@ -70,7 +70,7 @@ function gb_ensureDefaultSettings_() {
     ['portalWebsiteUrl', existing.portalWebsiteUrl != null ? existing.portalWebsiteUrl : ''],
     ['portalGroupUrl', existing.portalGroupUrl != null ? existing.portalGroupUrl : ''],
     ['portalExtraNote', existing.portalExtraNote != null ? existing.portalExtraNote : '付款後請填寫：付款日期、後五碼，等待對帳完成後即可在此查看狀態。'],
-    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的名字，若有改名或無法查詢請私訊官方LINE，預設密碼 1314，可自行修改']
+    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。']
   ];
   var appendRows = [];
   for (var d = 0; d < defaults.length; d++) {
@@ -400,7 +400,7 @@ function gb_fetchAllData_() {
   var exchangeRate = settings.exchangeRate ? Number(settings.exchangeRate) : 0.22;
   var portalConfig = gb_buildPortalConfigFromSettings_(settings);
 
-  var bankViewerCfg = gb_readBankViewerConfig_(settings);
+  var bankViewerCfg = gb_migrateBankPassword_(settingsSheet, settings, gb_readBankViewerConfig_(settings));
   return {
     groups: Object.keys(groupsMap).map(function (k) { return groupsMap[k]; }),
     bankJournal: bankJournal,
@@ -726,14 +726,13 @@ function gb_writeCustomerBalanceMemos_(sheet, list) {
 }
 
 var GB_BANK_VIEWER_LOG_LIMIT = 400;
-var GB_BANK_VIEWER_DEFAULT_PASSWORD = 'HeinaBank';
 
 function gb_defaultBankViewerConfig_() {
   return {
     enabled: true,
-    accessPassword: GB_BANK_VIEWER_DEFAULT_PASSWORD,
-    passwordUpdatedAt: Date.now(),
-    bankInfo: '請向團主索取最新查詢密碼後於此頁查看匯款帳號。\n\n（後台可編輯實際銀行帳號資訊）',
+    accessPassword: '',
+    passwordUpdatedAt: 0,
+    bankInfo: '請向團主索取查詢密碼後於此頁查看匯款帳號。\n\n（後台可編輯實際銀行帳號資訊）',
     logs: []
   };
 }
@@ -746,6 +745,25 @@ function gb_pickAccessPassword_(o, fallback) {
     if (s) return s;
   }
   return fallback;
+}
+
+function gb_migrateBankPassword_(sheet, settings, cfg) {
+  var legacy = '';
+  try {
+    if (settings && settings.bankViewerJson) {
+      var parsed = JSON.parse(String(settings.bankViewerJson));
+      legacy = String(gb_pickAccessPassword_(parsed, '') || '').trim();
+    }
+  } catch (e) {}
+  if (legacy && !String(heinaBankPassword_() || '').trim()) {
+    heinaSetScriptProp_(HEINA_PROP_BANK_PASSWORD, legacy);
+  }
+  if (sheet && legacy) {
+    cfg.accessPassword = '';
+    gb_writeBankViewerConfig_(sheet, cfg);
+  }
+  cfg.accessPassword = '';
+  return cfg;
 }
 
 function gb_readBankViewerConfig_(settings) {
@@ -783,14 +801,10 @@ function gb_readBankViewerConfig_(settings) {
 
 function gb_writeBankViewerConfig_(sheet, cfg) {
   var safe = cfg || gb_defaultBankViewerConfig_();
-  if (!String(safe.accessPassword || '').trim()) {
-    safe.accessPassword = GB_BANK_VIEWER_DEFAULT_PASSWORD;
-  }
-  // 寫入時去掉舊 password 欄，統一用 accessPassword
+  // Password stays in Script Properties, not in the sheet JSON.
   var out = {
     enabled: safe.enabled !== false,
-    accessPassword: String(safe.accessPassword),
-    passwordUpdatedAt: Number(safe.passwordUpdatedAt) || Date.now(),
+    passwordUpdatedAt: Number(safe.passwordUpdatedAt) || 0,
     bankInfo: String(safe.bankInfo || ''),
     logs: safe.logs || []
   };
@@ -806,9 +820,22 @@ function gb_bankViewerPublicMeta_(cfg) {
   var c = cfg || gb_defaultBankViewerConfig_();
   return {
     enabled: c.enabled !== false,
-    passwordSet: !!String(c.accessPassword || '').trim(),
+    passwordSet: !!String(heinaBankPassword_() || '').trim(),
     passwordUpdatedAt: Number(c.passwordUpdatedAt) || 0,
     monthsSincePasswordUpdate: gb_monthsSinceBankPassword_(c.passwordUpdatedAt)
+  };
+}
+
+function gb_bankViewerAdminView_(cfg) {
+  var c = cfg || gb_defaultBankViewerConfig_();
+  var password = heinaBankPassword_();
+  return {
+    enabled: c.enabled !== false,
+    accessPassword: password,
+    passwordSet: !!String(password).trim(),
+    passwordUpdatedAt: Number(c.passwordUpdatedAt) || 0,
+    bankInfo: String(c.bankInfo || ''),
+    logs: c.logs || []
   };
 }
 
@@ -843,12 +870,15 @@ function gb_loadBankViewerFromSheet_() {
       if (sRows[si][0]) settings[String(sRows[si][0])] = sRows[si][1];
     }
   }
-  return { sheet: settingsSheet, config: gb_readBankViewerConfig_(settings) };
+  return {
+    sheet: settingsSheet,
+    config: gb_migrateBankPassword_(settingsSheet, settings, gb_readBankViewerConfig_(settings))
+  };
 }
 
 function gb_getBankViewerAdmin_() {
   var loaded = gb_loadBankViewerFromSheet_();
-  return { ok: true, config: loaded.config };
+  return { ok: true, config: gb_bankViewerAdminView_(loaded.config) };
 }
 
 function gb_saveBankViewer_(pl) {
@@ -856,20 +886,17 @@ function gb_saveBankViewer_(pl) {
   var prev = loaded.config;
   var next = {
     enabled: pl && pl.enabled !== undefined ? !!pl.enabled : prev.enabled,
-    accessPassword: prev.accessPassword,
+    accessPassword: '',
     passwordUpdatedAt: prev.passwordUpdatedAt,
     bankInfo: pl && pl.bankInfo !== undefined ? String(pl.bankInfo) : prev.bankInfo,
     logs: pl && pl.clearLogs ? [] : (prev.logs || [])
   };
   if (pl && pl.newPassword != null && String(pl.newPassword).trim() !== '') {
-    next.accessPassword = String(pl.newPassword).trim();
+    heinaSetScriptProp_(HEINA_PROP_BANK_PASSWORD, String(pl.newPassword).trim());
     next.passwordUpdatedAt = Date.now();
   }
-  if (!String(next.accessPassword || '').trim()) {
-    next.accessPassword = prev.accessPassword || GB_BANK_VIEWER_DEFAULT_PASSWORD;
-  }
   gb_writeBankViewerConfig_(loaded.sheet, next);
-  return { ok: true, message: '已儲存銀行帳號查詢設定', config: next };
+  return { ok: true, message: '已儲存銀行帳號查詢設定', config: gb_bankViewerAdminView_(next) };
 }
 
 function gb_verifyBankViewerAccess_(pl) {
@@ -881,6 +908,7 @@ function gb_verifyBankViewerAccess_(pl) {
     if (pl.accessPassword != null) accessPassword = String(pl.accessPassword);
     else if (pl.password != null) accessPassword = String(pl.password);
   }
+  var want = heinaBankPassword_();
   var nextCfg;
   var result;
 
@@ -890,10 +918,10 @@ function gb_verifyBankViewerAccess_(pl) {
   } else if (!customerName) {
     nextCfg = gb_appendBankViewerLog_(cfg, { customerName: '', ok: false, reason: 'empty_name' });
     result = { ok: false, message: '請填寫你在群裡的名字。' };
-  } else if (!String(cfg.accessPassword || '').trim()) {
+  } else if (!String(want).trim()) {
     nextCfg = gb_appendBankViewerLog_(cfg, { customerName: customerName, ok: false, reason: 'empty_password' });
     result = { ok: false, message: '團主尚未設定查詢密碼，請私訊索取。' };
-  } else if (accessPassword !== String(cfg.accessPassword)) {
+  } else if (!heinaSafeEqual_(accessPassword, want)) {
     nextCfg = gb_appendBankViewerLog_(cfg, { customerName: customerName, ok: false, reason: 'bad_password' });
     result = { ok: false, message: '查詢密碼錯誤。請向團主索取最新密碼後再試。' };
   } else {
@@ -1074,17 +1102,42 @@ function gb_findPortalLookupCustomer_(name, list) {
 }
 
 function gb_verifyLookupPin_(name, pin, list) {
-  var DEFAULT_PIN = '1314';
   var normalized = String(pin || '').replace(/\D/g, '').slice(0, 4);
   if (!/^\d{4}$/.test(normalized)) return { ok: false, message: '請輸入 4 位數查單密碼' };
   var entry = gb_findPortalLookupCustomer_(name, list || []);
-  var expected = entry && /^\d{4}$/.test(String(entry.lookupPin || ''))
-    ? String(entry.lookupPin)
-    : DEFAULT_PIN;
+  var stored = entry ? String(entry.lookupPin || '').replace(/\D/g, '').slice(0, 4) : '';
+  var expected = /^\d{4}$/.test(stored) ? stored : heinaLookupPin_();
+  if (!/^\d{4}$/.test(expected)) {
+    return { ok: false, message: '查單密碼尚未設定，請聯絡團主' };
+  }
   if (expected !== normalized) {
     return { ok: false, message: '查單密碼錯誤' };
   }
   return { ok: true };
+}
+
+function gb_publicBootstrap_() {
+  var loaded = gb_loadBankViewerFromSheet_();
+  return { ok: true, bankViewer: gb_bankViewerPublicMeta_(loaded.config) };
+}
+
+function gb_customerBalanceMemos_(pl) {
+  var name = pl && pl.customerName ? String(pl.customerName).trim() : '';
+  var pin = pl && pl.lookupPin != null ? String(pl.lookupPin) : '';
+  if (!name) return { ok: false, message: '請輸入查詢名稱', memos: [] };
+  var all = gb_fetchAllData_();
+  var auth = gb_verifyLookupPin_(name, pin, all.portalLookupCustomers || []);
+  if (!auth.ok) return { ok: false, message: auth.message || '查單密碼錯誤', memos: [] };
+  var want = name.replace(/\s+/g, '').toLowerCase();
+  var memos = [];
+  var list = all.customerBalanceMemos || [];
+  for (var i = 0; i < list.length; i++) {
+    var m = list[i];
+    if (!m) continue;
+    var n = String(m.customerName || '').replace(/\s+/g, '').toLowerCase();
+    if (n === want) memos.push(m);
+  }
+  return { ok: true, memos: memos };
 }
 
 function gb_upsertPortalLookupPin_(list, name, newPin) {

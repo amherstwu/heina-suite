@@ -1,11 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApi } from '../context/useApi'
-import type {
-  GroupBuyAppData,
-  VerifyBankViewerAccessPayload,
-  VerifyBankViewerAccessResult,
-} from '../api/types'
+import type { VerifyBankViewerAccessPayload, VerifyBankViewerAccessResult } from '../api/types'
 import './bankAccountViewer.css'
 
 export function BankAccountViewerPage() {
@@ -21,7 +17,10 @@ export function BankAccountViewerPage() {
   const loadMeta = useCallback(async () => {
     setLoadingMeta(true)
     try {
-      const data = await api.call<GroupBuyAppData>({ module: 'groupbuy', action: 'getAppData' })
+      const data = await api.call<{ bankViewer?: { enabled?: boolean } }>({
+        module: 'groupbuy',
+        action: 'publicBootstrap',
+      })
       setEnabled(data.bankViewer?.enabled !== false)
     } catch {
       setEnabled(true)

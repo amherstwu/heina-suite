@@ -1,6 +1,6 @@
 /** Unified Apps Script envelope (single `unifiedApi` entry). */
 
-export type ModuleId = 'groupbuy' | 'ledger' | 'preorder' | 'storefront'
+export type ModuleId = 'groupbuy' | 'ledger' | 'preorder' | 'storefront' | 'auth'
 
 /** 官網公開現貨（不含倉位等內部欄位） */
 export type PublicSpotProduct = {
@@ -24,6 +24,8 @@ export type UnifiedRequest = {
   module: ModuleId
   action: string
   payload?: unknown
+  /** Server session from auth/login. Omitted for public actions. */
+  adminToken?: string
 }
 
 /** 顧客端公告（可由後台 JSON 字串擴充；缺省時前端使用預設列表） */

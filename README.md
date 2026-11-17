@@ -2,6 +2,27 @@
 
 整合 **團購訂單**、**記帳**、**預購** 的前端 SPA，以及可佈署至同一本 Google 試算表綁定專案的 **Google Apps Script** 後端（`unifiedApi` 單一入口）。
 
+## 正式網站（GitHub Pages）
+
+前端改由 GitHub Pages 提供，預期網址：
+
+**https://amherstwu.github.io/heina-suite/**
+
+Apps Script Web App（網址結尾 `/exec`）只當資料 API。瀏覽器以 `Content-Type: text/plain` POST JSON（避免 CORS 預檢）；若 POST 被瀏覽器擋住，較小的要求會改走 JSONP GET。
+
+1. 倉庫 Settings → Pages → Source 選 **GitHub Actions**。私人倉庫的 Pages 需要付費方案，否則把倉庫改成公開。
+2. 部署 Web App：執行身分「我」、誰可以存取「任何人」。複製 `/exec` 網址。
+3. GitHub → Settings → Secrets and variables → Actions → **Variables** → `VITE_GAS_URL` = 該網址。推上 `master`（或 `main`）會建置並部署。改網址後要重跑 workflow。
+4. Apps Script → 專案設定 → **指令碼屬性**（不要寫進 Git）：
+   - `HEINA_ADMIN_PASSWORD` 後台登入
+   - `HEINA_LOOKUP_PIN` 四位數查單預設密碼（客人沒有個別密碼時）
+   - `HEINA_BANK_PASSWORD` 匯款帳號查詢密碼
+5. 把 `deploy/apps-script-bundle/Code.gs`（由目前 `gas/*.gs` 合併）貼上或 `clasp push`，然後**重新部署** Web App。
+
+路由使用 hash（`#/lookup`、`#/shop`、`#/login`）。`public/404.html` 會把沒有 hash 的深連結轉回 hash，避免 GitHub Pages 的 404。
+
+未設定 `VITE_GAS_URL` 時，網站只使用這台瀏覽器的預覽資料，畫面上會有提示。
+
 ## 本地開發
 
 ```bash
@@ -97,7 +118,11 @@ npm run build:gas
 
 ## 前端如何呼叫 GAS
 
-在 Web App 內開啟時，`window.google.script.run` 存在，會自動改走 `unifiedApi(JSON.stringify({ module, action, payload }))`。
+- 嵌在 Apps Script 頁面裡、且 `window.google.script.run` 存在時，走 `google.script.run.unifiedApi`。
+- GitHub Pages 設定了 `VITE_GAS_URL` 時，對 `/exec` 送 `text/plain` POST；失敗再試 JSONP。
+- 兩者都沒有時使用本機 Mock（`localStorage`）。
+
+管理 API 需要 `auth/login` 換到的 token。查單、開團目錄、商城目錄、付款回報、銀行帳號驗證維持公開。密碼不在前端原始碼裡。
 
 ## 上架 Ready：資料線與碼倉線
 
@@ -107,7 +132,7 @@ npm run build:gas
 |----|------|--------|
 | **正式站／資料庫** | 客人查單、匯款查詢、團務對帳 | Apps Script Web App＋本試算表（`npm run deploy`） |
 | **整理／備份** | 離線用 Excel 整理後匯回 | 後台 `#/integrations` →「上架 Ready：Sheets／Excel 資料包」 |
-| **程式碼倉** | 版本與備份，**不當正式站** | GitHub Desktop → private repo |
+| **程式碼倉／顧客網站** | 版本、以及 GitHub Pages 正式前台 | 推上 `master` 後由 Actions 部署 |
 
 ### 資料包（HeinaDataPack）
 
@@ -134,7 +159,7 @@ API：`groupbuy/exportDataPack`、`groupbuy/importDataPack`。
 2. 開啟 **GitHub Desktop** → File → **Add local repository**
 3. 選路徑：`…\動漫情報系統\heina-suite`
 4. **Publish repository** → 勾選 **Keep this code private** → Publish
-5. 之後：改碼 → Commit → Push；給客人仍用 Apps Script 部署
+5. 之後：改碼 → Commit → Push。客人開 GitHub Pages；試算表仍是 Apps Script Web App。
 
 ## 專案結構（摘要）
 

@@ -2,9 +2,20 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+/**
+ * GitHub project Pages is served at /heina-suite/.
+ * Local dev and `vite preview` stay at `/` unless VITE_BASE is set.
+ * Hash routes must NOT use this path as React Router basename.
+ */
+function pagesBase(): string {
+  const fromEnv = (process.env.VITE_BASE || '').trim()
+  if (!fromEnv) return '/'
+  return fromEnv.endsWith('/') ? fromEnv : `${fromEnv}/`
+}
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: './',
+  base: pagesBase(),
   server: {
     host: '127.0.0.1',
     /** 避開 MCurator 常用的 5173 */

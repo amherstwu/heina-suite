@@ -1,7 +1,6 @@
 import {
   DEFAULT_ADMIN_LOGIN_LOCK_MINUTES,
   DEFAULT_ADMIN_LOGIN_MAX_ATTEMPTS,
-  DEFAULT_ADMIN_PASSWORD_HASH,
   DEFAULT_ADMIN_SESSION_HOURS,
 } from '../auth/adminDefaults'
 import type {
@@ -515,7 +514,7 @@ const myShipRecords = makeMyShipRecords(shipmentRecords)
 /** 新環境／清空後的預設後台設定（無示範訂單） */
 export const defaultDaigouSettings: DaigouState['settings'] = {
   adminAuthEnabled: true,
-  adminPasswordHash: DEFAULT_ADMIN_PASSWORD_HASH,
+  adminPasswordHash: '',
   adminSessionHours: DEFAULT_ADMIN_SESSION_HOURS,
   adminLoginMaxAttempts: DEFAULT_ADMIN_LOGIN_MAX_ATTEMPTS,
   adminLoginLockMinutes: DEFAULT_ADMIN_LOGIN_LOCK_MINUTES,

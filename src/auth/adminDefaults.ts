@@ -1,17 +1,8 @@
 /**
- * 初次安裝預設團主密碼（SHA-256 + pepper，見 adminSession.ts）。
- * 登入後請至「設定 → 安全與防火牆」立即修改。
+ * 後台登入鎖定與工作階段預設。
+ * 管理密碼不寫在前端。正式站由 Apps Script 指令碼屬性 HEINA_ADMIN_PASSWORD 驗證。
+ * 未設定 VITE_GAS_URL 的本機預覽，第一次使用時由管理員自行建立密碼（只存在該瀏覽器）。
  */
-export const DEFAULT_ADMIN_PASSWORD = 'HeinaOwner2026'
-
-/** 與 hashAdminPassword(DEFAULT_ADMIN_PASSWORD) 一致 */
-export const DEFAULT_ADMIN_PASSWORD_HASH =
-  'ee020aad8651bcf2db73d0c7dec418e95f9e6a80d20bb44ea0dac14023cdd50d'
-
 export const DEFAULT_ADMIN_SESSION_HOURS = 12
 export const DEFAULT_ADMIN_LOGIN_MAX_ATTEMPTS = 5
 export const DEFAULT_ADMIN_LOGIN_LOCK_MINUTES = 15
-
-export function isDefaultAdminPasswordHash(hash: string | undefined | null): boolean {
-  return (hash ?? '').trim() === DEFAULT_ADMIN_PASSWORD_HASH
-}

@@ -1,9 +1,6 @@
 import type { PortalLookupCustomer } from '../api/types'
 import type { Customer } from './types'
 
-/** 未設定時的預設查單密碼 */
-export const DEFAULT_LOOKUP_PIN = '1314'
-
 export function normalizeLookupPin(raw: string): string {
   return String(raw).replace(/\D/g, '').slice(0, 4)
 }
@@ -12,9 +9,13 @@ export function isValidLookupPin(pin: string): boolean {
   return /^\d{4}$/.test(pin)
 }
 
+/**
+ * 客人資料上已存的 4 碼。未設定則回傳空字串。
+ * 正式站的預設查單密碼只放在 Apps Script 指令碼屬性 HEINA_LOOKUP_PIN，不進前端。
+ */
 export function effectiveLookupPin(raw: string | undefined | null): string {
   const pin = normalizeLookupPin(raw ?? '')
-  return isValidLookupPin(pin) ? pin : DEFAULT_LOOKUP_PIN
+  return isValidLookupPin(pin) ? pin : ''
 }
 
 export function lookupNameKey(s: string): string {
@@ -57,7 +58,10 @@ export function verifyLookupAccess(
   if (!isValidLookupPin(pin)) return { ok: false, error: '請輸入 4 位數查單密碼' }
 
   const entry = findPortalLookupCustomer(q, portalLookupCustomers ?? [])
-  const expected = entry ? effectiveLookupPin(entry.lookupPin) : DEFAULT_LOOKUP_PIN
+  const expected = entry ? effectiveLookupPin(entry.lookupPin) : ''
+  if (!isValidLookupPin(expected)) {
+    return { ok: false, error: '查單密碼尚未設定，請聯絡團主' }
+  }
   if (expected !== pin) {
     return { ok: false, error: '查單密碼錯誤' }
   }
