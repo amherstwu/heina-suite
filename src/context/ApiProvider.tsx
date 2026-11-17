@@ -3,10 +3,13 @@ import { ApiContext } from './apiContextBase'
 import type { UnifiedClient } from '../api/client'
 import { createMockClient } from '../adapters/mock'
 import { createGasClient, isGasHost } from '../adapters/gas'
+import { createGasHttpClient } from '../adapters/gasHttp'
+import { hasRemoteGas } from '../config/gasEndpoint'
 
 export function ApiProvider({ children }: { children: ReactNode }) {
   const client = useMemo<UnifiedClient>(() => {
     if (isGasHost()) return createGasClient()
+    if (hasRemoteGas()) return createGasHttpClient()
     return createMockClient()
   }, [])
 

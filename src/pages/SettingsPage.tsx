@@ -12,9 +12,10 @@ import {
   DEFAULT_ADMIN_LOGIN_LOCK_MINUTES,
   DEFAULT_ADMIN_LOGIN_MAX_ATTEMPTS,
   DEFAULT_ADMIN_SESSION_HOURS,
-  isDefaultAdminPasswordHash,
 } from '../auth/adminDefaults'
 import { clearLoginLock } from '../auth/adminFirewall'
+import { useApi } from '../context/useApi'
+import { hasRemoteGas } from '../config/gasEndpoint'
 
 function normalizeHex(v: string | undefined, fallback: string): string {
   const t = (v || '').trim()
@@ -30,7 +31,10 @@ const sectionTitle = 'text-[11px] font-bold uppercase tracking-[0.14em] text-ds-
 export function SettingsPage() {
   const settings = useDaigouStore((s) => s.settings)
   const addToast = useDaigouStore((s) => s.addToast)
+  const api = useApi()
+  const remote = hasRemoteGas()
   const [local, setLocal] = useState(settings)
+  const [adminPwdCurrent, setAdminPwdCurrent] = useState('')
   const [adminPwdNew, setAdminPwdNew] = useState('')
   const [adminPwdNew2, setAdminPwdNew2] = useState('')
   const [pwdBusy, setPwdBusy] = useState(false)
@@ -64,6 +68,28 @@ export function SettingsPage() {
 
     setPwdBusy(true)
     try {
+      if (remote) {
+        if (!adminPwdCurrent) {
+          addToast('請輸入目前密碼', 'err')
+          return
+        }
+        const res = await api.call<{ ok: boolean; message?: string }>({
+          module: 'auth',
+          action: 'changePassword',
+          payload: { currentPassword: adminPwdCurrent, newPassword: adminPwdNew.trim() },
+        })
+        if (!res.ok) {
+          addToast(res.message || '更新失敗', 'err')
+          return
+        }
+        setAdminPwdCurrent('')
+        setAdminPwdNew('')
+        setAdminPwdNew2('')
+        clearAdminSession()
+        clearLoginLock()
+        addToast(res.message || '已更新管理密碼，請重新登入後台', 'info')
+        return
+      }
       const hash = await hashAdminPassword(adminPwdNew.trim())
       mockApi.saveSettings({
         ...local,
@@ -173,10 +199,22 @@ export function SettingsPage() {
 
               <div className="rounded-xl border border-white/[0.06] bg-ds-surface/40 p-4">
                 <p className={sectionTitle}>變更管理密碼</p>
-                {isDefaultAdminPasswordHash(local.adminPasswordHash) ? (
-                  <p className="mt-2 text-xs leading-relaxed text-amber-200/90">
-                    仍使用系統預設密碼，建議立即修改。
-                  </p>
+                <p className="mt-2 text-xs leading-relaxed text-ds-text-secondary">
+                  {remote
+                    ? '正式站密碼存在 Apps Script 指令碼屬性，修改後所有管理工作階段會失效。'
+                    : '本機預覽密碼只存在這台瀏覽器。'}
+                </p>
+                {remote ? (
+                  <label className="mt-3 block">
+                    <span className="text-meta font-semibold text-ds-text-secondary">目前密碼</span>
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      className={field}
+                      value={adminPwdCurrent}
+                      onChange={(e) => setAdminPwdCurrent(e.target.value)}
+                    />
+                  </label>
                 ) : null}
                 <label className="mt-3 block">
                   <span className="text-meta font-semibold text-ds-text-secondary">新密碼（至少 6 字元）</span>

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Group, Order } from '../../daigou/types'
-import type { GroupBuyAppData, SubmitCustomerPaymentReportResult } from '../../api/types'
+import type { SharedCustomerBalanceMemo, SubmitCustomerPaymentReportResult } from '../../api/types'
 import { useApi } from '../../context/useApi'
 import { useDaigouStore } from '../../daigou/store'
 import {
@@ -17,6 +17,7 @@ import { dueDepositAmount } from '../staffLookup/previewUtils'
 
 type Props = {
   customerName: string
+  lookupPin: string
   orders: Order[]
   groupsById: Map<string, Group>
   onSubmitted?: () => void
@@ -36,7 +37,13 @@ function orderDepositLabel(order: Order, group?: Group) {
   return { groupName, code, deposit }
 }
 
-export function CustomerPaymentReportPanel({ customerName, orders, groupsById, onSubmitted }: Props) {
+export function CustomerPaymentReportPanel({
+  customerName,
+  lookupPin,
+  orders,
+  groupsById,
+  onSubmitted,
+}: Props) {
   const api = useApi()
   const customers = useDaigouStore((s) => s.customers)
   const [sharedMemos, setSharedMemos] = useState<SelectableMemo[]>([])
@@ -52,11 +59,19 @@ export function CustomerPaymentReportPanel({ customerName, orders, groupsById, o
 
   useEffect(() => {
     let cancelled = false
+    if (!customerName.trim() || !/^\d{4}$/.test(lookupPin)) {
+      setSharedMemos([])
+      return
+    }
     void api
-      .call<GroupBuyAppData>({ module: 'groupbuy', action: 'getAppData' })
+      .call<{ ok?: boolean; memos?: SharedCustomerBalanceMemo[] }>({
+        module: 'groupbuy',
+        action: 'customerBalanceMemos',
+        payload: { customerName, lookupPin },
+      })
       .then((data) => {
         if (cancelled) return
-        const list = openSharedBalanceMemosForName(data.customerBalanceMemos, customerName).map((m) => ({
+        const list = openSharedBalanceMemosForName(data.memos, customerName).map((m) => ({
           id: m.id,
           amountTwd: Number(m.amountTwd) || 0,
         }))
@@ -68,7 +83,7 @@ export function CustomerPaymentReportPanel({ customerName, orders, groupsById, o
     return () => {
       cancelled = true
     }
-  }, [api, customerName])
+  }, [api, customerName, lookupPin])
 
   const openMemos = useMemo(() => {
     const map = new Map<string, SelectableMemo>()

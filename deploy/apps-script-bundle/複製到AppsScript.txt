@@ -1,54 +1,34 @@
-Heina Suite → Google Apps Script（整專案只要兩個檔）
+Heina Suite — GitHub Pages 前端 + Apps Script API
 ==================================================
-建置時間：2026-06-02T13:53:41.525Z
-產物目錄：heina-suite/deploy/apps-script-bundle/
 
-【一】本機建置（建議用一鍵部署，含檢查）
+【前端】GitHub Pages
 --------------------------------------
-  cd heina-suite
-  npm run deploy
+倉庫預設分支推上後，GitHub Actions（.github/workflows/pages.yml）會建置並部署。
+預期網址：https://amherstwu.github.io/heina-suite/
+Pages 來源請選 GitHub Actions。私人倉庫的 Pages 需要付費方案，否則請將倉庫設為公開。
 
-等同於：npm run build → 路由／進貨／seed 檢查 → npm run build:gas
+建置時設定：
+  VITE_BASE=/heina-suite/
+  VITE_GAS_URL=https://script.google.com/macros/s/XXXX/exec
+GitHub → Settings → Secrets and variables → Actions → Variables → VITE_GAS_URL
+改網址後要重新跑 workflow，網址會進到公開的 JS（這是 Web App 網址，不是密碼）。
 
-僅重建 bundle（略過 tsc 全站建置，開發中慎用）：
-  npm run build:gas
-
-【二】貼到 Apps Script
+【後端】Apps Script
 --------------------------------------
-完成後，本目錄應有：
+1. 試算表 → 擴充功能 → Apps Script（綁定這本試算表）
+2. 將本目錄 Code.gs 貼成一支指令碼（或 clasp push gas/）
+3. 部署 → 新增部署 → 類型「網頁應用程式」
+   執行身分：我
+   誰可以存取：任何人
+4. 複製結尾為 /exec 的網址，填進 VITE_GAS_URL，重新部署 Pages
+5. 專案設定 → 指令碼屬性（不要提交到 Git）：
+   HEINA_ADMIN_PASSWORD   後台登入密碼
+   HEINA_LOOKUP_PIN       4 位數查單預設密碼（客人沒有個別密碼時使用）
+   HEINA_BANK_PASSWORD    匯款帳號查詢密碼
+   HEINA_PAGES_URL        選用，預設為 GitHub Pages 網址
 
-  【A】index.html   → Apps Script：＋ → HTML → 檔名必須為 index → 全選貼上
-  【B】Code.gs       → Apps Script：＋ → 指令碼 → 檔名自訂（如 Code）→ 貼上
-                        （可只貼 GAS-APPS-SCRIPT-COPY-START ～ END 區段）
+index.html 是給舊版「用 Apps Script 開網站」的說明頁，不是 20MB 的前端。
+顧客請開 GitHub Pages。/exec 沒有 query 時，若專案裡仍有名為 index 的 HTML，會顯示該檔；否則顯示說明頁。
 
-試算表須「綁定此 Apps Script」；部署「網路應用程式」後用該網址開啟。
-部署新版本後請「新增部署作業」或更新現有 Web App 版本。
-
-【三】Hash 路由（與本版前端一致）
---------------------------------------
-顧客（免登入）：
-  #/ 或 #/lookup     顧客專區（主入口）
-  #/portal           簡易訂單查詢
-  #/shop、#/home     現貨／活動頁
-  #/groupbuy         舊團購閘道（admin / 4502）
-
-後台 HelpMeBuy Pro：
-  #/login            管理密碼（首次可自設，存本機）
-  #/dashboard        總覽
-  #/procurement      進貨中心（含供應商、採購單、到貨、應付、退貨、對帳）
-  #/integrations     試算表／開團 xlsx 匯入
-  其餘：#/orders、#/products、#/customers、#/shipping …
-
-【四】疑難排解
---------------------------------------
-• 開啟網址顯示「找不到 index」→ 確認 HTML 檔名為 index，且已重新部署 Web App
-• 畫面空白 → F12 主控台；確認 index.html 為最新 npm run deploy 產物
-• 後台資料舊 → 瀏覽器清 localStorage 或後台「清空示範資料」
-• runLedgerSmokeTest 無法寫入試算表：
-    1) 專案必須「綁定」試算表（從試算表：擴充功能 → Apps Script 開啟），勿用獨立 script.google.com 專案
-    2) 首次執行須按「審查權限」並允許試算表存取
-    3) 若「記帳明細」分頁有保護範圍，請允許腳本編輯或解除保護
-    4) 獨立專案時：執行一次 ld_setSpreadsheetIdForTests_('你的試算表ID')，或設 Script Property：HEINA_SPREADSHEET_ID
-    5) 試算表選單 Heina Suite →「記帳 Smoke Test」可看逐步結果
-• 詳見 deploy-manifest.json（檔案大小與建置時間）
-
+路由是 hash（例如 #/lookup、#/shop、#/login），深連結不依賴伺服器重寫。
+另有 public/404.html，把沒有 hash 的路徑轉回 hash 路由。

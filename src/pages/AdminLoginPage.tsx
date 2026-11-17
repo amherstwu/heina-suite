@@ -5,18 +5,20 @@ import { Btn, Card } from '../components/ui'
 import { useDaigouStore } from '../daigou/store'
 import {
   clearAdminSession,
+  getAdminToken,
   hashAdminPassword,
   isAdminSessionValid,
+  setAdminToken,
   startAdminSession,
 } from '../auth/adminSession'
 import {
   DEFAULT_ADMIN_LOGIN_LOCK_MINUTES,
   DEFAULT_ADMIN_LOGIN_MAX_ATTEMPTS,
-  DEFAULT_ADMIN_PASSWORD,
-  isDefaultAdminPasswordHash,
 } from '../auth/adminDefaults'
 import { clearLoginLock, getLoginLockState, recordFailedLogin } from '../auth/adminFirewall'
 import { APP_NAME } from '../daigou/constants'
+import { useApi } from '../context/useApi'
+import { hasRemoteGas } from '../config/gasEndpoint'
 
 export function AdminLoginPage() {
   const navigate = useNavigate()
@@ -25,14 +27,15 @@ export function AdminLoginPage() {
   const settings = useDaigouStore((s) => s.settings)
   const updateSettings = useDaigouStore((s) => s.updateSettings)
   const addToast = useDaigouStore((s) => s.addToast)
+  const api = useApi()
+  const remote = hasRemoteGas()
 
-  const enabled = settings.adminAuthEnabled !== false
+  const enabled = remote || settings.adminAuthEnabled !== false
   const hash = (settings.adminPasswordHash ?? '').trim()
   const sessionHours = settings.adminSessionHours ?? 12
   const maxAttempts = settings.adminLoginMaxAttempts ?? DEFAULT_ADMIN_LOGIN_MAX_ATTEMPTS
   const lockMinutes = settings.adminLoginLockMinutes ?? DEFAULT_ADMIN_LOGIN_LOCK_MINUTES
-  const setupMode = search.get('setup') === '1' || !hash
-  const stillDefaultPassword = isDefaultAdminPasswordHash(hash)
+  const setupMode = !remote && (search.get('setup') === '1' || !hash)
 
   const [pwd, setPwd] = useState('')
   const [pwd2, setPwd2] = useState('')
@@ -53,12 +56,12 @@ export function AdminLoginPage() {
       navigate('/dashboard', { replace: true })
       return
     }
-    if (hash && isAdminSessionValid()) {
-      const from = (loc.state as { from?: string } | null)?.from
-      const dest = from && from !== '/login' && !from.startsWith('/login') ? from : '/dashboard'
-      navigate(dest, { replace: true })
-    }
-  }, [enabled, hash, loc.state, navigate])
+    const sessionOk = remote ? isAdminSessionValid() && Boolean(getAdminToken()) : Boolean(hash) && isAdminSessionValid()
+    if (!sessionOk) return
+    const from = (loc.state as { from?: string } | null)?.from
+    const dest = from && from !== '/login' && !from.startsWith('/login') ? from : '/dashboard'
+    navigate(dest, { replace: true })
+  }, [enabled, hash, loc.state, navigate, remote])
 
   async function onSetup(e: FormEvent) {
     e.preventDefault()
@@ -103,20 +106,44 @@ export function AdminLoginPage() {
     }
     setBusy(true)
     try {
-      const h = await hashAdminPassword(pwd)
-      if (h !== hash) {
-        const r = recordFailedLogin({ maxAttempts, lockMinutes })
-        if (r.locked) {
-          setErr(`密碼錯誤次數過多，已鎖定 ${r.remainingMinutes} 分鐘`)
-        } else {
-          setErr(`密碼錯誤（尚可嘗試 ${r.attemptsLeft} 次）`)
+      if (remote) {
+        const res = await api.call<{
+          ok: boolean
+          message?: string
+          needsSetup?: boolean
+          token?: string
+          sessionHours?: number
+        }>({
+          module: 'auth',
+          action: 'login',
+          payload: { password: pwd },
+        })
+        if (!res.ok || !res.token) {
+          const r = recordFailedLogin({ maxAttempts, lockMinutes })
+          setErr(res.message || (r.locked ? `已鎖定 ${r.remainingMinutes} 分鐘` : '密碼錯誤'))
+          setLockTick((t) => t + 1)
+          return
         }
-        setLockTick((t) => t + 1)
-        return
+        clearLoginLock()
+        setAdminToken(res.token)
+        startAdminSession(res.sessionHours || sessionHours)
+        addToast('已登入後台', 'ok')
+      } else {
+        const h = await hashAdminPassword(pwd)
+        if (h !== hash) {
+          const r = recordFailedLogin({ maxAttempts, lockMinutes })
+          if (r.locked) {
+            setErr(`密碼錯誤次數過多，已鎖定 ${r.remainingMinutes} 分鐘`)
+          } else {
+            setErr(`密碼錯誤（尚可嘗試 ${r.attemptsLeft} 次）`)
+          }
+          setLockTick((t) => t + 1)
+          return
+        }
+        clearLoginLock()
+        startAdminSession(sessionHours)
+        addToast('已登入後台', 'ok')
       }
-      clearLoginLock()
-      startAdminSession(sessionHours)
-      addToast('已登入後台', 'ok')
       const from = (loc.state as { from?: string } | null)?.from
       const dest = from && from !== '/login' && !from.startsWith('/login') ? from : '/dashboard'
       navigate(dest, { replace: true })
@@ -176,11 +203,9 @@ export function AdminLoginPage() {
             </p>
           ) : null}
 
-          {!setupMode && stillDefaultPassword ? (
-            <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900/90">
-              目前仍為系統預設密碼。初次登入可使用{' '}
-              <code className="rounded bg-amber-100 px-1 font-mono text-amber-900">{DEFAULT_ADMIN_PASSWORD}</code>
-              ，登入後請至「設定 → 安全與防火牆」立即修改。
+          {remote && !setupMode ? (
+            <p className="mb-4 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-xs leading-relaxed text-violet-900/90">
+              管理密碼由 Apps Script 驗證，不會寫在這個網站裡。若尚未設定，請到指令碼屬性新增 HEINA_ADMIN_PASSWORD。
             </p>
           ) : null}
 
@@ -234,8 +259,9 @@ export function AdminLoginPage() {
           )}
 
           <p className="mt-5 text-[11px] leading-relaxed text-slate-500">
-            密碼以 SHA-256 存於本機瀏覽器；工作階段關閉分頁後失效。連續錯誤 {maxAttempts} 次將鎖定{' '}
-            {lockMinutes} 分鐘。正式上線請於 nginx／Cloudflare／VPN 再限制管理路徑或來源 IP。
+            {remote
+              ? '正式站密碼存在 Apps Script 指令碼屬性。工作階段關閉分頁後失效。'
+              : `本機預覽的密碼只存在這台瀏覽器。連續錯誤 ${maxAttempts} 次將鎖定 ${lockMinutes} 分鐘。`}
           </p>
         </Card>
       </div>

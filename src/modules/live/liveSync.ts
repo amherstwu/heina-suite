@@ -44,7 +44,7 @@ function ensureCustomer(name: string) {
         totalOrders: 0,
         totalUnpaidBalance: 0,
         notes: '由連線管理自動建立',
-        lookupPin: '1314',
+        lookupPin: undefined,
       },
       ...s.customers,
     ],

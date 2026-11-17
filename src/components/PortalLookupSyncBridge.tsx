@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useApi } from '../context/useApi'
+import { hasRemoteGas } from '../config/gasEndpoint'
 import { useDaigouStore } from '../daigou/store'
 import { mapCustomersToPortalLookup } from '../daigou/portalLookupAuth'
 import {
@@ -14,6 +15,7 @@ export function PortalLookupSyncBridge() {
 
   useEffect(() => {
     syncPortalLookupCustomersToGroupbuy(customers)
+    if (hasRemoteGas()) return
     const portalLookupCustomers = mapCustomersToPortalLookup(customers)
     const customerBalanceMemos = mapCustomersToSharedBalanceMemos(customers)
     void api

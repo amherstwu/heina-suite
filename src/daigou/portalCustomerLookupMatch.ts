@@ -128,8 +128,8 @@ export function authorizeCustomerLookupQuery(
     const entry = (portalLookupCustomers || []).find(
       (c) => lookupNameKey(c.lineDisplayName) === name || lookupNameKey(c.name) === name,
     )
-    const expectedPin = entry ? effectiveLookupPin(entry.lookupPin) : effectiveLookupPin('')
-    if (expectedPin === pin) authorized.push(name)
+    const expectedPin = entry ? effectiveLookupPin(entry.lookupPin) : ''
+    if (expectedPin && expectedPin === pin) authorized.push(name)
   }
 
   if (authorized.length === 0) {

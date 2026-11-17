@@ -35,15 +35,13 @@ export type BankViewerPublicMeta = {
 export const BANK_VIEWER_LOG_LIMIT = 400
 export const BANK_VIEWER_PASSWORD_MONTHS = 3
 
-export const DEFAULT_BANK_VIEWER_PASSWORD = 'HeinaBank'
-
 export function defaultBankViewerConfig(): BankViewerConfig {
   return {
     enabled: true,
-    accessPassword: DEFAULT_BANK_VIEWER_PASSWORD,
-    passwordUpdatedAt: Date.now(),
+    accessPassword: '',
+    passwordUpdatedAt: 0,
     bankInfo:
-      '請向團主索取最新查詢密碼後於此頁查看匯款帳號。\n\n（後台可編輯實際銀行帳號資訊）',
+      '請向團主索取查詢密碼後於此頁查看匯款帳號。\n\n（後台可編輯實際銀行帳號資訊。正式站密碼放在 Apps Script 指令碼屬性 HEINA_BANK_PASSWORD）',
     logs: [],
   }
 }
@@ -222,9 +220,8 @@ export function mergeBankViewerSave(
     next.accessPassword = np
     next.passwordUpdatedAt = Date.now()
   }
-  // 絕不可存成空密碼
   if (!String(next.accessPassword || '').trim()) {
-    next.accessPassword = base.accessPassword || DEFAULT_BANK_VIEWER_PASSWORD
+    next.accessPassword = base.accessPassword || ''
   }
   return next
 }

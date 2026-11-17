@@ -4,6 +4,7 @@
  */
 const STORAGE_UNTIL = 'heina_suite_admin_sess_until'
 const STORAGE_MARK = 'heina_suite_admin_sess_v1'
+const STORAGE_TOKEN = 'heina_suite_admin_token'
 
 const PEPPER = 'heina-suite-admin-gate-v1'
 
@@ -26,10 +27,28 @@ export function startAdminSession(sessionHours: number) {
   }
 }
 
+export function setAdminToken(token: string) {
+  try {
+    if (token) sessionStorage.setItem(STORAGE_TOKEN, token)
+    else sessionStorage.removeItem(STORAGE_TOKEN)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getAdminToken(): string {
+  try {
+    return sessionStorage.getItem(STORAGE_TOKEN) || ''
+  } catch {
+    return ''
+  }
+}
+
 export function clearAdminSession() {
   try {
     sessionStorage.removeItem(STORAGE_MARK)
     sessionStorage.removeItem(STORAGE_UNTIL)
+    sessionStorage.removeItem(STORAGE_TOKEN)
   } catch {
     /* ignore */
   }

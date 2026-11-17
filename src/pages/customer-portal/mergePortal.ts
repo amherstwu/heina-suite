@@ -23,7 +23,7 @@ const PORTAL_FALLBACK: PortalConfig = {
   websiteUrl: '',
   groupUrl: '',
   extraNote: '付款後請回傳後五碼；金額疑問請先聯絡代購主再匯款。',
-  lookupDesc: '請輸入在社群裡的名字，若有改名或無法查詢請私訊官方LINE，預設密碼 1314，可自行修改',
+  lookupDesc: '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。',
 }
 
 function parseJsonArray<T>(raw: unknown): T[] | undefined {
