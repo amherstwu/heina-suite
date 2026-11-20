@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 /**
- * GitHub project Pages is served at /heina-suite/.
+ * GitHub Pages for heinashop.github.io is served at /.
  * Local dev and `vite preview` stay at `/` unless VITE_BASE is set.
  * Hash routes must NOT use this path as React Router basename.
  */

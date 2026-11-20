@@ -6,7 +6,7 @@
 
 前端改由 GitHub Pages 提供，預期網址：
 
-**https://amherstwu.github.io/heina-suite/**
+**https://heinashop.github.io/**
 
 Apps Script Web App（網址結尾 `/exec`）只當資料 API。瀏覽器以 `Content-Type: text/plain` POST JSON（避免 CORS 預檢）；若 POST 被瀏覽器擋住，較小的要求會改走 JSONP GET。
 

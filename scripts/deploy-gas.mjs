@@ -36,7 +36,7 @@ function writeDeployGuide(builtAt) {
 ==================================================
 建置時間：${builtAt}
 
-顧客網站：https://amherstwu.github.io/heina-suite/
+顧客網站：https://heinashop.github.io/
 （GitHub Pages，來源選 GitHub Actions。私人倉庫需要付費方案。）
 
 Apps Script Web App（結尾 /exec）是資料 API，不是網站本體。

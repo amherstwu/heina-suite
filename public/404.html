@@ -7,7 +7,7 @@
     <script>
       // GitHub Pages has no SPA rewrite. Send deep links to the hash router.
       ;(function () {
-        var base = '/heina-suite/'
+        var base = '/'
         var path = window.location.pathname || '/'
         var rest = path.indexOf(base) === 0 ? path.slice(base.length) : path.replace(/^\//, '')
         rest = rest.replace(/^index\.html\/?/, '').replace(/\/$/, '')

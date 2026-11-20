@@ -13,7 +13,7 @@ var HEINA_PROP_LOOKUP_PIN = 'HEINA_LOOKUP_PIN';
 var HEINA_PROP_BANK_PASSWORD = 'HEINA_BANK_PASSWORD';
 var HEINA_PROP_PAGES_URL = 'HEINA_PAGES_URL';
 var HEINA_PROP_ADMIN_SESSIONS = 'HEINA_ADMIN_SESSIONS';
-var HEINA_DEFAULT_PAGES_URL = 'https://amherstwu.github.io/heina-suite/';
+var HEINA_DEFAULT_PAGES_URL = 'https://heinashop.github.io/';
 
 function heinaScriptProp_(key) {
   try {

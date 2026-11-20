@@ -60,7 +60,7 @@ const landing = `<!doctype html>
   </head>
   <body style="font-family:system-ui,sans-serif;padding:24px;line-height:1.55">
     <h1 style="font-size:1.25rem">Heina 網站已改由 GitHub Pages 提供</h1>
-    <p><a href="https://amherstwu.github.io/heina-suite/">開啟顧客專區</a></p>
+    <p><a href="https://heinashop.github.io/">開啟顧客專區</a></p>
     <p style="color:#555;font-size:14px">
       這份 HTML 只是 Apps Script 的說明頁。正式畫面在 GitHub Pages。
       Web App 的 /exec 網址是資料 API：前端以 text/plain POST（或 JSONP）呼叫 unifiedApi。
@@ -78,11 +78,11 @@ const guide = `Heina Suite — GitHub Pages 前端 + Apps Script API
 【前端】GitHub Pages
 --------------------------------------
 倉庫預設分支推上後，GitHub Actions（.github/workflows/pages.yml）會建置並部署。
-預期網址：https://amherstwu.github.io/heina-suite/
+預期網址：https://heinashop.github.io/
 Pages 來源請選 GitHub Actions。私人倉庫的 Pages 需要付費方案，否則請將倉庫設為公開。
 
 建置時設定：
-  VITE_BASE=/heina-suite/
+  VITE_BASE=/
   VITE_GAS_URL=https://script.google.com/macros/s/XXXX/exec
 GitHub → Settings → Secrets and variables → Actions → Variables → VITE_GAS_URL
 改網址後要重新跑 workflow，網址會進到公開的 JS（這是 Web App 網址，不是密碼）。

@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_BASE: /heina-suite/
+          VITE_BASE: /
           VITE_GAS_URL: ${{ vars.VITE_GAS_URL }}
 
       - name: Reject committed secrets in the bundle
