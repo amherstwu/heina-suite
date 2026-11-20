@@ -11,18 +11,20 @@ const IDS = new Set(TEACH_IMAGE_CARDS.map((c) => c.id))
 
 function parseImages(raw: unknown): PortalTeachImage[] {
   if (!Array.isArray(raw)) return []
-  return raw
-    .map((item, i) => {
-      const o = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
-      const src = String(o.src || '').trim()
-      if (!src) return null
-      return {
-        id: String(o.id || `img_${i}`),
-        src,
-        alt: String(o.alt || '').trim() || undefined,
-      }
-    })
-    .filter((x): x is PortalTeachImage => !!x)
+  const out: PortalTeachImage[] = []
+  raw.forEach((item, i) => {
+    const o = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
+    const src = String(o.src || '').trim()
+    if (!src) return
+    const image: PortalTeachImage = {
+      id: String(o.id || `img_${i}`),
+      src,
+    }
+    const alt = String(o.alt || '').trim()
+    if (alt) image.alt = alt
+    out.push(image)
+  })
+  return out
 }
 
 export function parseTeachCards(raw: unknown): PortalTeachCard[] | undefined {
