@@ -85,8 +85,8 @@ export function V50OrderEntryModal({
   }
 
   return (
-    <div className="v50-order-backdrop" onClick={onClose}>
-      <div className="v50-order-card" onClick={(e) => e.stopPropagation()}>
+    <div className="v50-order-backdrop">
+      <div className="v50-order-card">
         <div className="v50-order-head">
           <h3 className="v50-order-title">客訂明細錄入</h3>
           <button type="button" className="v50-order-close" onClick={onClose} aria-label="關閉">

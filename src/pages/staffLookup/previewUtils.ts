@@ -1,4 +1,5 @@
 import type { Group, Order, Shipment } from '../../daigou/types'
+import { itemTotalTwd } from '../../daigou/logic/orderCalc'
 import { getPaymentStatusLabel } from '../../daigou/statusDisplay'
 import {
   countShippingQueueRows,
@@ -17,13 +18,13 @@ export function pillTone(status: string) {
   return 'warn'
 }
 
-/** 待付訂金顯示／合計用：未填或 0 時自動帶入總額−20 */
+/** 待付訂金顯示／合計用：未填或 0 時自動帶入商品金額−20（不含運費） */
 export function dueDepositAmount(order: Order) {
   if (order.paymentStatus !== 'unpaid') {
     return Math.max(0, Number(order.deposit) || 0)
   }
   const d = Number(order.deposit) || 0
-  return d > 0 ? d : suggestDeposit(order.totalAmount)
+  return d > 0 ? d : suggestDeposit(itemTotalTwd(order.items))
 }
 
 export function shipDateSortKey(text?: string): number {

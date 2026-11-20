@@ -15,6 +15,7 @@ import {
 } from '../daigou/customerBankLastFive'
 import { normalizeLookupPin, isValidLookupPin } from '../daigou/portalLookupAuth'
 import { CustomerBankLastFiveEditor } from '../components/customers/CustomerBankLastFiveEditor'
+import { CustomerNoteField } from '../components/customers/CustomerNoteField'
 import './customersPage.css'
 
 const allTags: CustomerTag[] = [
@@ -29,16 +30,24 @@ const allTags: CustomerTag[] = [
 
 function customerSearchHay(c: Customer) {
   const banks = normalizeBankLastFiveCodes(c.bankLastFiveCodes).join(' ')
-  return `${c.name} ${c.lineDisplayName} ${c.phoneLast3} ${c.socialAccount || ''} ${banks} ${c.notes || ''}`.toLowerCase()
+  return `${c.name} ${c.lineDisplayName} ${c.phoneLast3} ${c.socialAccount || ''} ${banks} ${c.notes || ''} ${c.customerNote || ''}`.toLowerCase()
 }
 
-function formatJoinedAt(ms?: number) {
-  if (!ms || !Number.isFinite(ms) || ms <= 0) return '加入時間未記錄'
-  try {
-    return `加入 ${new Date(ms).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}`
-  } catch {
-    return '加入時間未記錄'
-  }
+function toJoinedDateInput(ms?: number) {
+  if (!ms || !Number.isFinite(ms) || ms <= 0) return ''
+  const d = new Date(ms)
+  if (Number.isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function fromJoinedDateInput(value: string) {
+  const v = value.trim()
+  if (!v) return undefined
+  const ms = new Date(`${v}T12:00:00`).getTime()
+  return Number.isFinite(ms) ? ms : undefined
 }
 
 export function CustomersPage() {
@@ -247,7 +256,7 @@ export function CustomersPage() {
                 key={c.id}
                 className="customer-card"
                 onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('a, button, input, .cu-bank')) return
+                  if ((e.target as HTMLElement).closest('a, button, input, textarea, label, .cu-bank')) return
                   navigate(`/customers/${c.id}`)
                 }}
               >
@@ -262,7 +271,15 @@ export function CustomersPage() {
                       {c.phoneLast3 ? ` · 末三碼 ${c.phoneLast3}` : ''}
                     </p>
                     <div className="customer-chips">
-                      <span className="customer-chip customer-chip--joined">{formatJoinedAt(c.createdAt)}</span>
+                      <label className="customer-joined-edit" onClick={(e) => e.stopPropagation()}>
+                        <span>加入</span>
+                        <input
+                          type="date"
+                          value={toJoinedDateInput(c.createdAt)}
+                          onChange={(e) => updateCustomer(c.id, { createdAt: fromJoinedDateInput(e.target.value) })}
+                          aria-label="加入時間"
+                        />
+                      </label>
                       {hasOpenBalanceMemos(c.balanceMemos) ? (
                         <span className="customer-chip customer-chip--warn">
                           帳務
@@ -288,7 +305,11 @@ export function CustomersPage() {
                   onChange={(next) => updateCustomer(c.id, { bankLastFiveCodes: next })}
                 />
 
-                {c.notes?.trim() ? <p className="customer-notes">備註：{c.notes.trim()}</p> : null}
+                <CustomerNoteField
+                  compact
+                  value={c.customerNote}
+                  onSave={(next) => updateCustomer(c.id, { customerNote: next })}
+                />
 
                 <div className="customer-actions">
                   <Btn to={`/customers/${c.id}`} variant="secondary" className="!py-2 text-xs" onClick={(e) => e.stopPropagation()}>

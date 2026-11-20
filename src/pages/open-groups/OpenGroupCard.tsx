@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 import type { PublicGroupCatalogItem } from '../../api/types'
 import { normalizeGroupStatus } from '../../modules/groupbuy/v50Utils'
-import { isMailOrderChannel } from '../../modules/groupbuy/groupLifecycle'
+import { isInGroupOps, isMailOrderChannel } from '../../modules/groupbuy/groupLifecycle'
 import { normalizeGroupImageUrls, openGroupDetailHref } from './openGroupImages'
+import { groupOpsHref } from './openGroupsUtils'
 import { GroupImageSwipe } from './GroupImageSwipe'
 
 function dash(v: string | undefined) {
@@ -121,9 +122,16 @@ export function OpenGroupCard({
             </button>
           ) : null}
           {showEditAction ? (
-            <Link to={editHref} className="og-card-edit">
-              編輯此小卡
-            </Link>
+            <div className="og-card-foot-links">
+              {isInGroupOps(group) && !compact ? (
+                <Link to={groupOpsHref(group.id)} className="og-card-ops-jump">
+                  團務
+                </Link>
+              ) : null}
+              <Link to={editHref} className="og-card-edit">
+                編輯此小卡
+              </Link>
+            </div>
           ) : null}
         </div>
       ) : null}

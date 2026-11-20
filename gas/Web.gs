@@ -122,6 +122,7 @@ function unifiedApi(json) {
   if (mod === 'groupbuy') {
     if (act === 'getAppData') return gb_fetchAllData_();
     if (act === 'saveAppData') return gb_performSave_(pl);
+    if (act === 'saveBankJournal') return gb_saveBankJournal_(pl);
     if (act === 'syncPortalLookupCustomers') return gb_syncPortalLookupCustomers_(pl);
     if (act === 'changeLookupPin') return gb_changeLookupPin_(pl);
     if (act === 'customerLookup') return gb_customerLookup_(pl);

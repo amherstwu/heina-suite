@@ -8,6 +8,7 @@ import type {
 } from '../../api/types'
 import { calcItemsTotalTwd, calcOrderBalance, formatRemittancePaymentInfo, isV50CodPayment, normalizeGroupStatus, resolveV50Deposit } from './v50Utils'
 import { normalizeCustomerNameKey } from './customerNameKey'
+import { createPaymentJournalRow, upsertJournalRows } from './journalLogic'
 
 /** 付款回報應收訂金：未付款且訂金未填／0 時自動總額−20 */
 export function orderReceivableDeposit(o: Pick<GroupBuyOrder, 'paymentStatus' | 'totalTwd' | 'deposit' | 'items'>): number {
@@ -98,27 +99,18 @@ export function isV50OrderPaidLike(status: string): boolean {
   return status === '已付訂金' || status === '已結清' || status === '已付款' || status === '貨到付款'
 }
 
-/** 手動改回未付款或刪除關聯訂單時，移除含該訂單的付款回報（含已確認與日記帳） */
+/** 手動改回未付款或刪除關聯訂單時，移除含該訂單的付款回報（日記帳不動） */
 export function removePaymentReportsForOrder(
   bankJournal: BankJournalRow[],
   reports: CustomerPaymentReport[],
   orderId: string,
 ): { bankJournal: BankJournalRow[]; reports: CustomerPaymentReport[]; removedCount: number } {
-  let nextJournal = bankJournal
-  let nextReports = reports
-  let removedCount = 0
-
-  for (const report of reports) {
-    if (!report.orderIds.includes(orderId)) continue
-    if (report.status === 'confirmed') {
-      const journal = findPaymentReportJournal(nextJournal, report)
-      if (journal) nextJournal = nextJournal.filter((j) => j.id !== journal.id)
-    }
-    nextReports = nextReports.filter((r) => r.id !== report.id)
-    removedCount += 1
+  const nextReports = reports.filter((report) => !report.orderIds.includes(orderId))
+  return {
+    bankJournal,
+    reports: nextReports,
+    removedCount: reports.length - nextReports.length,
   }
-
-  return { bankJournal: nextJournal, reports: nextReports, removedCount }
 }
 
 export function removePendingPaymentReportsForOrder(
@@ -292,30 +284,11 @@ export function deletePaymentReport(
   return reports.filter((r) => r.id !== reportId)
 }
 
-function findPaymentReportJournal(
-  bankJournal: BankJournalRow[],
-  report: CustomerPaymentReport,
-): BankJournalRow | undefined {
-  if (report.journalEntryId) {
-    return bankJournal.find((j) => j.id === report.journalEntryId)
-  }
-  const noteNeedle = `${report.customerName} 付款回報`
-  return bankJournal.find(
-    (j) =>
-      j.category === '團購訂金' &&
-      String(j.note || '').includes(noteNeedle) &&
-      String(j.note || '').includes(report.lastFive) &&
-      Number(j.amount) === Number(report.totalAmount),
-  )
-}
-
 export function applyRevertPaymentReport(
   groups: GroupBuyGroup[],
   bankJournal: BankJournalRow[],
   report: CustomerPaymentReport,
 ): { groups: GroupBuyGroup[]; bankJournal: BankJournalRow[]; report: CustomerPaymentReport } {
-  const journal = findPaymentReportJournal(bankJournal, report)
-  const nextJournal = journal ? bankJournal.filter((j) => j.id !== journal.id) : bankJournal
   const targetIds = new Set(report.orderIds)
   const expectedByOrder = new Map(
     report.lines.map((line) => [line.orderId, lineExpectedDeposit(line)]),
@@ -348,10 +321,10 @@ export function applyRevertPaymentReport(
     status: 'pending',
     confirmedAt: undefined,
     confirmedBank: undefined,
-    journalEntryId: undefined,
+    journalEntryId: report.journalEntryId,
   }
 
-  return { groups: nextGroups, bankJournal: nextJournal, report: nextReport }
+  return { groups: nextGroups, bankJournal, report: nextReport }
 }
 
 export function applyDeletePaymentReport(
@@ -455,14 +428,16 @@ export function applyConfirmPaymentReport(
     }),
   }))
 
-  const journalRow: BankJournalRow = {
-    id: `j_pr_${Date.now()}`,
+  let journalRow: BankJournalRow = createPaymentJournalRow({
     date: report.remittanceDate,
-    bank: remittanceBank || '待分類',
-    type: '收入',
     amount: totalIn,
-    category: '團購訂金',
-    note: `${report.customerName} 付款回報 ${confirmedLines.length} 筆 · 後五碼 ${report.lastFive}`,
+    customerName: report.customerName,
+    groupNames: confirmedLines.map((line) => line.groupName),
+    lastFive: report.lastFive,
+    bank: remittanceBank || '待分類',
+  })
+  if (report.journalEntryId && bankJournal.some((j) => j.id === report.journalEntryId)) {
+    journalRow = { ...journalRow, id: report.journalEntryId }
   }
 
   const nextLines = confirmedLines.map((line) => ({
@@ -512,7 +487,7 @@ export function applyConfirmPaymentReport(
 
   return {
     groups: nextGroups,
-    bankJournal: [journalRow, ...bankJournal],
+    bankJournal: upsertJournalRows(bankJournal, [journalRow]),
     report: nextReport,
     pendingFollowUp,
   }
@@ -629,15 +604,15 @@ export function applySupplementPaymentReport(
     }),
   }))
 
-  const journalRow: BankJournalRow = {
-    id: `j_sup_${Date.now()}`,
+  const journalRow: BankJournalRow = createPaymentJournalRow({
     date: remittanceDate,
-    bank: remittanceBank || '待分類',
-    type: '收入',
     amount: addAmount,
-    category: '團購訂金',
-    note: `${report.customerName} 補款 ${line.groupName} · ${note?.trim() || '補款'}`,
-  }
+    customerName: report.customerName,
+    groupNames: [line.groupName],
+    lastFive: report.lastFive,
+    bank: remittanceBank || '待分類',
+  })
+  if (note?.trim()) journalRow.note = `${journalRow.note} ${note.trim()}`.trim()
 
   const updatedLine = {
     ...line,
@@ -657,7 +632,7 @@ export function applySupplementPaymentReport(
   return {
     ok: true,
     groups: nextGroups,
-    bankJournal: [journalRow, ...bankJournal],
+    bankJournal: upsertJournalRows(bankJournal, [journalRow]),
     reports: nextReports,
   }
 }

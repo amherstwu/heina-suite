@@ -3,6 +3,7 @@ import {
   ExternalLink,
   FileText,
   HelpCircle,
+  Image,
   ListOrdered,
   Megaphone,
   Plus,
@@ -19,8 +20,18 @@ import type {
   PortalFaqItem,
   PortalGuideInfographic,
   PortalProcessStep,
+  PortalSocialIconKind,
+  PortalSocialIconSlot,
+  PortalTeachCard,
+  PortalTeachImage,
 } from '../api/types'
 import { normalizePortal, editableGuideInfographics } from './customer-portal/mergePortal'
+import { teachCardsFor } from './customer-portal/portalTeachCards'
+import {
+  SOCIAL_ICON_SLOT_MAX,
+  SOCIAL_ICON_SLOT_MIN,
+  socialIconSlotsFor,
+} from './customer-portal/portalSocialIcons'
 import {
   announcementsFor,
   faqFor,
@@ -28,12 +39,13 @@ import {
 } from './customer-portal/staticContent'
 import './portalContentAdminPage.css'
 
-type AdminTab = 'basic' | 'news' | 'guide' | 'faq'
+type AdminTab = 'basic' | 'news' | 'guide' | 'teach' | 'faq'
 
 const TABS: { id: AdminTab; label: string; icon: typeof FileText }[] = [
   { id: 'basic', label: '基本文案', icon: FileText },
   { id: 'news', label: '最新公告', icon: Megaphone },
   { id: 'guide', label: '購物流程', icon: ListOrdered },
+  { id: 'teach', label: '教學圖卡', icon: Image },
   { id: 'faq', label: '常見問題', icon: HelpCircle },
 ]
 
@@ -84,6 +96,8 @@ export function PortalContentAdminPage() {
         faqItems: faqFor(merged),
         processSteps: processStepsFor(merged),
         guideInfographics: editableGuideInfographics(merged),
+        socialIconSlots: socialIconSlotsFor(merged),
+        teachCards: teachCardsFor(merged),
       })
       setStatusMsg('')
     } catch (e) {
@@ -112,7 +126,19 @@ export function PortalContentAdminPage() {
         alt: g.alt,
         src: String(g.src || '').startsWith('data:') ? undefined : g.src,
       }))
-      const portalToSave: PortalConfig = { ...portal, guideInfographics }
+      const socialIconSlots = socialIconSlotsFor(portal)
+      const ig = socialIconSlots.find((s) => s.kind === 'ig')
+      const th = socialIconSlots.find((s) => s.kind === 'threads')
+      const lineSlot = socialIconSlots.find((s) => s.kind === 'line')
+      const portalToSave: PortalConfig = {
+        ...portal,
+        guideInfographics,
+        socialIconSlots,
+        teachCards: teachCardsFor(portal),
+        instagramUrl: ig?.url || portal.instagramUrl,
+        threadsUrl: th?.url || portal.threadsUrl,
+        groupUrl: lineSlot?.url || portal.groupUrl,
+      }
       const payload: GroupBuySavePayload = {
         groups,
         bankJournal,
@@ -144,6 +170,8 @@ export function PortalContentAdminPage() {
   const guideInfographics = Array.isArray(portal.guideInfographics)
     ? portal.guideInfographics
     : editableGuideInfographics(portal)
+  const socialSlots = socialIconSlotsFor(portal)
+  const teachCards = teachCardsFor(portal)
 
   function updateAnnouncement(idx: number, patch: Partial<PortalAnnouncement>) {
     const next = announcements.map((a, i) => (i === idx ? { ...a, ...patch } : a))
@@ -206,6 +234,75 @@ export function PortalContentAdminPage() {
   function updateGuide(idx: number, patch: Partial<PortalGuideInfographic>) {
     const next = guideInfographics.map((g, i) => (i === idx ? { ...g, ...patch } : g))
     setPortal({ ...portal, guideInfographics: next })
+  }
+
+  function updateSocialSlot(idx: number, patch: Partial<PortalSocialIconSlot>) {
+    const next = socialSlots.map((s, i) => (i === idx ? { ...s, ...patch } : s))
+    setPortal({ ...portal, socialIconSlots: next })
+  }
+
+  function addSocialSlot() {
+    if (socialSlots.length >= SOCIAL_ICON_SLOT_MAX) return
+    setPortal({
+      ...portal,
+      socialIconSlots: [
+        ...socialSlots,
+        { id: uid(), label: `連結 ${socialSlots.length + 1}`, url: '', kind: 'custom' },
+      ],
+    })
+  }
+
+  function removeSocialSlot(idx: number) {
+    if (socialSlots.length <= SOCIAL_ICON_SLOT_MIN) return
+    setPortal({ ...portal, socialIconSlots: socialSlots.filter((_, i) => i !== idx) })
+  }
+
+  function updateTeachImages(cardId: PortalTeachCard['id'], images: PortalTeachImage[]) {
+    const next = teachCards.map((c) => (c.id === cardId ? { ...c, images } : c))
+    setPortal({ ...portal, teachCards: next })
+  }
+
+  async function addTeachImage(cardId: PortalTeachCard['id'], file: File | null) {
+    if (!file) return
+    try {
+      const src = await readImageAsDataUrl(file)
+      const card = teachCards.find((c) => c.id === cardId)
+      const images = [...(card?.images || []), { id: uid(), src, alt: card?.title }]
+      updateTeachImages(cardId, images)
+    } catch (e) {
+      console.error(e)
+      setStatusMsg('圖片讀取失敗')
+    }
+  }
+
+  function removeTeachImage(cardId: PortalTeachCard['id'], imageId: string) {
+    const card = teachCards.find((c) => c.id === cardId)
+    updateTeachImages(
+      cardId,
+      (card?.images || []).filter((img) => img.id !== imageId),
+    )
+  }
+
+  async function onAvatarFile(file: File | null) {
+    if (!file) return
+    try {
+      const avatarUrl = await readImageAsDataUrl(file)
+      setPortal({ ...portal, avatarUrl })
+    } catch (e) {
+      console.error(e)
+      setStatusMsg('大頭貼讀取失敗')
+    }
+  }
+
+  async function onSocialIconFile(idx: number, file: File | null) {
+    if (!file) return
+    try {
+      const iconUrl = await readImageAsDataUrl(file)
+      updateSocialSlot(idx, { iconUrl, kind: 'custom' })
+    } catch (e) {
+      console.error(e)
+      setStatusMsg('圖示讀取失敗')
+    }
   }
 
   async function onGuideImageFile(idx: number, file: File | null) {
@@ -310,8 +407,10 @@ export function PortalContentAdminPage() {
                       : activeTab === 'news'
                         ? '同步顯示於查詢頁「最新公告」區（最多顯示 4 則）'
                         : activeTab === 'guide'
-                          ? '代購流程圖與文字步驟，同步至查詢頁'
-                          : '同步顯示於查詢頁「常見問題」區'}
+                          ? '代購流程圖與文字步驟，點開「代購流程」卡片時一起顯示'
+                          : activeTab === 'teach'
+                            ? '搜尋商品、討論串、聊天室、喊單這四張卡片的圖片'
+                            : '同步顯示於查詢頁「常見問題」卡片'}
                   </p>
                 </div>
               </div>
@@ -348,6 +447,44 @@ export function PortalContentAdminPage() {
                     placeholder="Heina訂單自助查詢"
                   />
                 </label>
+                <div className="pca-field" style={{ gridColumn: '1 / -1' }}>
+                  <span className="pca-label">查詢頁大頭貼</span>
+                  <div className="pca-avatar-row">
+                    <span className="pca-avatar-preview" aria-hidden>
+                      {portal.avatarUrl?.trim() ? <img src={portal.avatarUrl.trim()} alt="" /> : 'H'}
+                    </span>
+                    <div className="pca-avatar-actions">
+                      <label className="pca-btn pca-btn--secondary pca-btn--sm">
+                        上傳圖片
+                        <input
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null
+                            e.target.value = ''
+                            void onAvatarFile(file)
+                          }}
+                        />
+                      </label>
+                      {portal.avatarUrl?.trim() ? (
+                        <button
+                          type="button"
+                          className="pca-btn pca-btn--danger pca-btn--sm"
+                          onClick={() => setPortal({ ...portal, avatarUrl: '' })}
+                        >
+                          恢復預設 H
+                        </button>
+                      ) : null}
+                      <input
+                        className="pca-input"
+                        value={portal.avatarUrl?.startsWith('data:') ? '' : portal.avatarUrl || ''}
+                        onChange={(e) => setPortal({ ...portal, avatarUrl: e.target.value })}
+                        placeholder="或貼圖片網址 https://..."
+                      />
+                    </div>
+                  </div>
+                </div>
                 <label className="pca-field">
                   <span className="pca-label">官方 LINE 連結</span>
                   <input
@@ -357,6 +494,89 @@ export function PortalContentAdminPage() {
                     placeholder="https://line.me/..."
                   />
                 </label>
+                <div className="pca-social-editor" style={{ gridColumn: '1 / -1' }}>
+                  <div className="pca-social-editor-head">
+                    <span className="pca-label">社群圖示（官方 LINE 客服下方，至少 3 格）</span>
+                    <button
+                      type="button"
+                      className="pca-btn pca-btn--secondary pca-btn--sm"
+                      disabled={socialSlots.length >= SOCIAL_ICON_SLOT_MAX}
+                      onClick={addSocialSlot}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      新增一格
+                    </button>
+                  </div>
+                  {socialSlots.map((slot, idx) => (
+                    <article key={slot.id} className="pca-social-card">
+                      <div className="pca-social-card-preview">
+                        {slot.iconUrl ? (
+                          <img src={slot.iconUrl} alt="" />
+                        ) : (
+                          <span className="pca-social-kind">{slot.kind === 'ig' ? 'IG' : slot.kind === 'threads' ? 'Th' : slot.kind === 'line' ? 'LINE' : '+'}</span>
+                        )}
+                      </div>
+                      <div className="pca-social-card-fields">
+                        <label className="pca-field">
+                          <span className="pca-label">名稱</span>
+                          <input
+                            className="pca-input"
+                            value={slot.label}
+                            onChange={(e) => updateSocialSlot(idx, { label: e.target.value })}
+                          />
+                        </label>
+                        <label className="pca-field">
+                          <span className="pca-label">圖示類型</span>
+                          <select
+                            className="pca-select"
+                            value={slot.kind || 'custom'}
+                            onChange={(e) =>
+                              updateSocialSlot(idx, { kind: e.target.value as PortalSocialIconKind })
+                            }
+                          >
+                            <option value="ig">IG</option>
+                            <option value="threads">Threads</option>
+                            <option value="line">LINE／社群</option>
+                            <option value="custom">自訂圖</option>
+                          </select>
+                        </label>
+                        <label className="pca-field" style={{ gridColumn: '1 / -1' }}>
+                          <span className="pca-label">網址</span>
+                          <input
+                            className="pca-input"
+                            value={slot.url}
+                            onChange={(e) => updateSocialSlot(idx, { url: e.target.value })}
+                            placeholder="https://"
+                          />
+                        </label>
+                        <label className="pca-field" style={{ gridColumn: '1 / -1' }}>
+                          <span className="pca-label">自訂圖示網址（可空白，或上傳）</span>
+                          <input
+                            className="pca-input"
+                            value={slot.iconUrl || ''}
+                            onChange={(e) => updateSocialSlot(idx, { iconUrl: e.target.value })}
+                            placeholder="https://...png"
+                          />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="pca-file"
+                            onChange={(e) => void onSocialIconFile(idx, e.target.files?.[0] || null)}
+                          />
+                        </label>
+                      </div>
+                      {socialSlots.length > SOCIAL_ICON_SLOT_MIN ? (
+                        <button
+                          type="button"
+                          className="pca-btn pca-btn--danger pca-btn--sm"
+                          onClick={() => removeSocialSlot(idx)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
                 <label className="pca-field" style={{ gridColumn: '1 / -1' }}>
                   <span className="pca-label">簡介說明（主標下方）</span>
                   <textarea
@@ -560,6 +780,51 @@ export function PortalContentAdminPage() {
                     </article>
                   ))
                 )}
+              </div>
+            ) : null}
+
+            {activeTab === 'teach' ? (
+              <div className="pca-list">
+                {teachCards.map((card) => (
+                  <article key={card.id} className="pca-item">
+                    <div className="pca-item-head">
+                      <span className="pca-item-badge">{card.title}</span>
+                      <label className="pca-btn pca-btn--secondary pca-btn--sm">
+                        <Plus className="h-3.5 w-3.5" />
+                        上傳圖片
+                        <input
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null
+                            e.target.value = ''
+                            void addTeachImage(card.id, file)
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {(card.images || []).length === 0 ? (
+                      <p className="pca-empty">還沒有圖片。上傳後會出現在查詢頁這張教學卡裡。</p>
+                    ) : (
+                      <div className="pca-teach-images">
+                        {(card.images || []).map((img) => (
+                          <figure key={img.id} className="pca-teach-image">
+                            <img src={img.src} alt={img.alt || card.title || ''} />
+                            <button
+                              type="button"
+                              className="pca-btn pca-btn--danger pca-btn--sm"
+                              onClick={() => removeTeachImage(card.id, img.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              刪除
+                            </button>
+                          </figure>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                ))}
               </div>
             ) : null}
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { GroupBuyGroup } from '../../api/types'
-import { openGroupDetailHref } from '../../pages/open-groups/openGroupImages'
+import { openGroupManageHref } from '../../pages/open-groups/openGroupsUtils'
 import { isPortalListed } from './groupLifecycle'
 import { groupJpyDisplay, groupHasUnpaidOrders, groupOrderCount, normalizeGroupStatus } from './v50Utils'
 import './v50GroupCard.css'
@@ -32,11 +32,11 @@ export function V50GroupInfoCard({ group, onOpen, onEdit, onDelete }: Props) {
         </div>
         <div className="v50-gcard-actions">
           <Link
-            to={`${openGroupDetailHref(group.id)}?manage=1`}
-            className="v50-gcard-edit"
+            to={openGroupManageHref(group.id)}
+            className="v50-gcard-jump"
             onClick={(e) => e.stopPropagation()}
           >
-            開團頁
+            開團
           </Link>
           <button type="button" className="v50-gcard-edit-btn" onClick={onEdit}>
             編輯

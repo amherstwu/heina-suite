@@ -1,0 +1,70 @@
+.customer-note-field {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.customer-note-field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--cu-muted, var(--ds-text-muted, #64748b));
+}
+
+.customer-note-field-input {
+  width: 100%;
+  min-height: 3.25rem;
+  resize: vertical;
+  border-radius: 0.65rem;
+  border: 1px solid var(--cu-line, rgba(255, 255, 255, 0.12));
+  background: var(--cu-surface, rgba(255, 255, 255, 0.06));
+  padding: 0.45rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--cu-ink, var(--ds-text, inherit));
+  outline: none;
+}
+
+.customer-note-field-input:focus {
+  border-color: #9ec4de;
+  box-shadow: 0 0 0 3px rgba(158, 196, 222, 0.28);
+}
+
+.customer-note-field--compact .customer-note-field-input {
+  min-height: 2.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.customer-note-field--autosize .customer-note-field-input,
+.customer-note-field--compact.customer-note-field--autosize .customer-note-field-input {
+  min-height: 0;
+  overflow-y: hidden;
+  resize: none;
+}
+
+.order-customer-note,
+.shipping-customer-note {
+  padding: 0 0.85rem 0.65rem;
+}
+
+.order-customer-note .customer-note-field {
+  margin-top: 0;
+}
+
+.shipping-customer-note .customer-note-field {
+  margin-top: 0;
+}
+
+.nickname-customer-note {
+  margin-top: 0.45rem;
+  margin-bottom: 0;
+  max-width: 36rem;
+}
+
+.nickname-customer-note .customer-note-field {
+  margin-top: 0;
+}

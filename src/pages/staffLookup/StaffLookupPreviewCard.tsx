@@ -52,7 +52,8 @@ export function StaffLookupPreviewCard({
   const depositLine = depositLineForBucket(order, effectiveBucket)
   const balanceAmount = balanceAmountForPreview(order, effectiveBucket)
   const itemsAmount = useMemo(() => itemTotalTwd(order.items), [order.items])
-  const grandTotal = order.totalAmount
+  const grandTotal =
+    itemsAmount + (Number(order.domesticShipping) || 0) + (Number(order.internationalShipping) || 0)
   const v50GroupId =
     parseV50Refs(group?.internalNotes).v50GroupId ?? parseV50Refs(order.internalNote).v50GroupId ?? null
 

@@ -65,6 +65,10 @@ export function V50OrderDetailSheet({ order, onClose, onEdit, onOpenDaigou }: Pr
             <span className="v50-order-sheet-label">國內運費</span>
             <strong>${Number(order.domesticShip || 0).toLocaleString()}</strong>
           </div>
+          <div>
+            <span className="v50-order-sheet-label">國際運費</span>
+            <strong>${Number(order.intlShip || 0).toLocaleString()}</strong>
+          </div>
         </div>
 
         <p className="v50-order-sheet-section">商品品項</p>

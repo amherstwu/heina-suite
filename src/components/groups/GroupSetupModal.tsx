@@ -68,6 +68,32 @@ function Field({
   )
 }
 
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="group-setup-field">
+      <span className="group-setup-label">{label}</span>
+      <span className={`group-setup-date${value ? '' : ' is-empty'}`}>
+        <span className="group-setup-date-text">{value || '年／月／日'}</span>
+        <input
+          type="date"
+          className="group-setup-date-native"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={label}
+        />
+      </span>
+    </label>
+  )
+}
+
 export function GroupSetupModal({ open, onClose, onSubmit, initialValues, title, groupId }: Props) {
   const [form, setForm] = useState<GroupSetupFormValues>(emptyGroupSetupForm)
 
@@ -142,37 +168,16 @@ export function GroupSetupModal({ open, onClose, onSubmit, initialValues, title,
                 </select>
               </Field>
 
-              <div className="group-setup-row">
-                <Field label="結單日期">
-                  <input
-                    type="date"
-                    className="group-setup-input group-setup-input-date"
-                    value={form.closingDate}
-                    onChange={(e) => patch('closingDate', e.target.value)}
-                  />
-                </Field>
-                <Field label="結束販賣日">
-                  <input
-                    type="date"
-                    className="group-setup-input group-setup-input-date"
-                    value={form.saleEndDate}
-                    onChange={(e) => patch('saleEndDate', e.target.value)}
-                  />
-                </Field>
+              <div className="group-setup-row group-setup-row-dates">
+                <DateField label="結單日期" value={form.closingDate} onChange={(v) => patch('closingDate', v)} />
+                <DateField label="結束販賣日" value={form.saleEndDate} onChange={(v) => patch('saleEndDate', v)} />
               </div>
 
-              <div className="group-setup-row">
-                <Field label="購買日期">
-                  <input
-                    type="date"
-                    className="group-setup-input group-setup-input-date"
-                    value={form.purchaseDate}
-                    onChange={(e) => patch('purchaseDate', e.target.value)}
-                  />
-                </Field>
+              <div className="group-setup-row group-setup-row-dates">
+                <DateField label="購買日期" value={form.purchaseDate} onChange={(v) => patch('purchaseDate', v)} />
                 <Field label="官方出貨日">
                   <input
-                    className="group-setup-input"
+                    className="group-setup-input group-setup-input-date"
                     placeholder="例：7月下旬、未定"
                     value={form.officialShipDate}
                     onChange={(e) => patch('officialShipDate', e.target.value)}

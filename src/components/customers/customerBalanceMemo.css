@@ -157,3 +157,85 @@
 .cbm-item-delete:hover {
   text-decoration: underline;
 }
+
+.cbm-collapsible {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.cbm-collapsible-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cbm-collapsible-title {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.cbm-collapsible-summary {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cbm-collapsible-chevron {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: #64748b;
+  transition: transform 0.15s ease;
+}
+
+.cbm-collapsible-chevron--open {
+  transform: rotate(180deg);
+}
+
+.cbm-collapsible-body {
+  padding: 0 0.9rem 0.9rem;
+}
+
+.cbm-collapsible--detail .cbm-detail-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.cbm-detail-badge {
+  margin-bottom: 0.75rem;
+}
+
+.cbm-detail-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .cbm-detail-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cbm-detail-subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #475569;
+}

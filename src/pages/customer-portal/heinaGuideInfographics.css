@@ -1,14 +1,107 @@
 /* Heina 代購流程圖（查詢頁／行銷頁／群規） */
 
+.heina-guide-block {
+  margin: 0.85rem 0 1.1rem;
+}
+
+.heina-guide-swipe-hint {
+  display: none;
+}
+
+.heina-guide-dots {
+  display: none;
+}
+
 .heina-guide-grid {
   display: grid;
   gap: 0.75rem;
-  margin: 0.85rem 0 1.1rem;
+  margin: 0;
 }
 
 @media (min-width: 720px) {
   .heina-guide-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 719px) {
+  .heina-guide-swipe-hint {
+    display: block;
+    margin: 0 0 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #8a7b6c;
+    letter-spacing: 0.02em;
+  }
+
+  .heina-guide-grid {
+    display: flex;
+    gap: 0.65rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 12%;
+    padding: 0.1rem 12% 0.35rem;
+    margin-inline: -0.35rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .heina-guide-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .heina-guide-card {
+    flex: 0 0 76%;
+    max-width: 15.5rem;
+    scroll-snap-align: center;
+  }
+
+  .heina-guide-card-media {
+    aspect-ratio: 16 / 10;
+    max-height: 8.25rem;
+  }
+
+  .heina-guide-card-copy {
+    padding: 0.5rem 0.65rem 0.55rem;
+    gap: 0.15rem;
+  }
+
+  .heina-guide-card-copy strong {
+    font-size: 0.78rem;
+  }
+
+  .heina-guide-card-copy span {
+    font-size: 0.68rem;
+  }
+
+  .heina-guide-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .heina-guide-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+  }
+
+  .heina-guide-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: #d4c8bb;
+    cursor: pointer;
+  }
+
+  .heina-guide-dot.is-active {
+    width: 1.05rem;
+    background: #c45c26;
   }
 }
 

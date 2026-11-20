@@ -526,3 +526,125 @@
   line-height: 1.55;
   color: var(--pca-sky-text);
 }
+
+.pca-social-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.pca-social-editor-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.pca-social-card {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: start;
+  padding: 0.85rem;
+  border: 1px solid var(--pca-line-soft);
+  border-radius: 0.85rem;
+  background: #fff;
+}
+
+.pca-social-card-preview {
+  display: grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--pca-line-soft);
+  background: var(--pca-lav-soft);
+  overflow: hidden;
+}
+
+.pca-social-card-preview img {
+  width: 1.6rem;
+  height: 1.6rem;
+  object-fit: contain;
+}
+
+.pca-social-kind {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--pca-lav-deep);
+}
+
+.pca-social-card-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+@media (max-width: 639px) {
+  .pca-social-card {
+    grid-template-columns: 1fr;
+  }
+
+  .pca-social-card-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pca-teach-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.pca-teach-image {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pca-teach-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.6rem;
+  border: 1px solid var(--pca-line-soft);
+}
+
+.pca-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.pca-avatar-preview {
+  display: grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #fde7ee;
+  color: #e07a94;
+  font-weight: 800;
+}
+
+.pca-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pca-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.pca-avatar-actions .pca-input {
+  flex: 1 1 12rem;
+}

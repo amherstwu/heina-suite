@@ -3,8 +3,9 @@
   inset: 0;
   z-index: 110;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 1rem;
   background: rgba(72, 88, 108, 0.55);
   backdrop-filter: blur(6px);
 }
@@ -19,11 +20,11 @@
 .v50-order-sheet {
   width: 100%;
   max-width: 26rem;
-  max-height: min(88dvh, 36rem);
+  max-height: min(86dvh, 36rem);
   overflow-y: auto;
-  border-radius: 1.35rem 1.35rem 0 0;
+  border-radius: 1.35rem;
   background: linear-gradient(180deg, #faf8f5 0%, #f3f0eb 100%);
-  padding: 1.2rem 1.15rem calc(1.1rem + env(safe-area-inset-bottom));
+  padding: 1.2rem 1.15rem 1.1rem;
   box-shadow: 0 24px 64px rgba(30, 41, 59, 0.18);
 }
 
@@ -31,6 +32,20 @@
   .v50-order-sheet {
     border-radius: 1.35rem;
   }
+}
+
+.admin-shell.admin-view-mobile .v50-order-sheet-back,
+html[data-admin-view='mobile'] .v50-order-sheet-back {
+  align-items: center;
+  padding: 1rem;
+}
+
+.admin-shell.admin-view-mobile .v50-order-sheet,
+html[data-admin-view='mobile'] .v50-order-sheet {
+  width: min(100%, 26rem);
+  max-height: min(86dvh, 36rem);
+  border-radius: 1.35rem;
+  margin: 0 auto;
 }
 
 .v50-order-sheet-head {

@@ -52,6 +52,16 @@ export function openGroupsListHref(channel?: OpenGroupChannelFilter): string {
   return `/open-groups?channel=${encodeURIComponent(channel)}`
 }
 
+/** 團務管理對應團（同一 group id） */
+export function groupOpsHref(groupId: string): string {
+  return `/groups?group=${encodeURIComponent(groupId)}`
+}
+
+/** 後台開團專區對應團 */
+export function openGroupManageHref(groupId: string): string {
+  return `${openGroupDetailHref(groupId)}?manage=1`
+}
+
 export function mapGroupToCatalogItem(g: GroupBuyGroup): PublicGroupCatalogItem {
   const imageUrls = normalizeGroupImageUrls(g.imageUrls, g.coverImageUrl)
   return {
@@ -185,6 +195,12 @@ export function pickHomeOpenGroupPreview(
   }
   for (const g of openSorted) {
     if (seen.has(g.id)) continue
+    picked.push(g)
+    seen.add(g.id)
+    if (picked.length >= limit) return picked
+  }
+  const rest = groups.filter((g) => !seen.has(g.id)).sort(sortOpenGroups)
+  for (const g of rest) {
     picked.push(g)
     seen.add(g.id)
     if (picked.length >= limit) break

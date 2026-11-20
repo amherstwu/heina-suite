@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowRight,
   CalendarClock,
   Truck,
   Wallet,
+  Building2,
 } from 'lucide-react'
 import { Btn } from '../components/ui'
 import { useApi } from '../context/useApi'
@@ -12,6 +12,7 @@ import type { GroupBuyAppData } from '../api/types'
 import { useDaigouStore } from '../daigou/store'
 import { commercialDashboard, type PendingDepositCustomerRow } from '../daigou/commercialDashboard'
 import { summarizePendingDepositByCustomerFromGroups } from '../modules/groupbuy/paymentReportLogic'
+import { countExpectedInboundThisMonth } from '../modules/groupbuy/inboundMonthLogic'
 import { TRANSACTION_CATEGORY_LABEL } from '../daigou/constants'
 import './dashboardPage.css'
 
@@ -54,14 +55,18 @@ export function DashboardPage() {
   const s = useDaigouStore()
   const dash = commercialDashboard(s)
   const [groupbuyPending, setGroupbuyPending] = useState<PendingDepositCustomerRow[]>([])
+  const [inboundExpectedCount, setInboundExpectedCount] = useState(0)
 
   const loadGroupbuyPending = useCallback(async () => {
     try {
       const data = await api.call<GroupBuyAppData>({ module: 'groupbuy', action: 'getAppData' })
-      setGroupbuyPending(summarizePendingDepositByCustomerFromGroups(data.groups || []))
+      const loadedGroups = data.groups || []
+      setGroupbuyPending(summarizePendingDepositByCustomerFromGroups(loadedGroups))
+      setInboundExpectedCount(countExpectedInboundThisMonth(loadedGroups))
     } catch (e) {
       console.error(e)
       setGroupbuyPending([])
+      setInboundExpectedCount(0)
     }
   }, [api])
 
@@ -84,19 +89,52 @@ export function DashboardPage() {
   return (
     <div className="dash-page">
       <section className="dash-hero">
-        <div>
-          <p className="dash-hero-kicker">Operations</p>
+        <p className="dash-hero-kicker">Operations</p>
+        <div className="dash-hero-title-row">
           <h1>營運總覽</h1>
-          <p>只看今天最需要處理的：待辦、應收、出貨與取貨風險。點卡片可直接進入對應列表。</p>
-        </div>
-        <div className="dash-hero-actions">
-          <Btn variant="secondary" className="!min-h-10 !py-2" to="/group-buy-center">
+          <Btn variant="secondary" className="dash-hero-center-btn" to="/group-buy-center">
             開團中心
           </Btn>
-          <Btn className="!min-h-10 !py-2" to="/shipping">
-            出貨物流
-            <ArrowRight className="h-4 w-4" />
-          </Btn>
+        </div>
+      </section>
+
+      <section className="dash-section">
+        <div className="dash-section-head">
+          <h2>團務時程</h2>
+          <Link to={linkTo(dash.links.receivable)}>應收 {money(dash.receivableOutstanding)}</Link>
+        </div>
+        <div className="dash-kpi-grid dash-kpi-grid--3">
+          <Link className="dash-kpi dash-kpi--lilac" to={linkTo(dash.links.closingGroups)}>
+            <div className="dash-kpi-top">
+              <p className="dash-kpi-label">即將結單</p>
+              <span className="dash-kpi-icon">
+                <CalendarClock className="h-4 w-4" />
+              </span>
+            </div>
+            <p className="dash-kpi-value">{dash.closingSoonGroupCount}</p>
+            <p className="dash-kpi-hint">近七日截團團務</p>
+          </Link>
+
+          <Link className="dash-kpi dash-kpi--peach" to={linkTo(dash.links.saleEndingGroups)}>
+            <div className="dash-kpi-top">
+              <p className="dash-kpi-label">即將結束販賣</p>
+              <span className="dash-kpi-icon">
+                <CalendarClock className="h-4 w-4" />
+              </span>
+            </div>
+            <p className="dash-kpi-value">{dash.saleEndingSoonGroupCount}</p>
+            <p className="dash-kpi-hint">近七日結束販賣</p>
+          </Link>
+          <Link className="dash-kpi dash-kpi--sky" to="/inbound-month">
+            <div className="dash-kpi-top">
+              <p className="dash-kpi-label">本月進倉</p>
+              <span className="dash-kpi-icon">
+                <Building2 className="h-4 w-4" />
+              </span>
+            </div>
+            <p className="dash-kpi-value">{inboundExpectedCount}</p>
+            <p className="dash-kpi-hint">官方出貨月＝本月，尚未進日本倉</p>
+          </Link>
         </div>
       </section>
 
@@ -203,39 +241,13 @@ export function DashboardPage() {
 
       <section className="dash-section">
         <div className="dash-section-head">
-          <h2>團務時程</h2>
-          <Link to={linkTo(dash.links.receivable)}>應收 {money(dash.receivableOutstanding)}</Link>
-        </div>
-        <div className="dash-kpi-grid dash-kpi-grid--2">
-          <Link className="dash-kpi" to={linkTo(dash.links.closingGroups)}>
-            <div className="dash-kpi-top">
-              <p className="dash-kpi-label">即將結單</p>
-              <span className="dash-kpi-icon">
-                <CalendarClock className="h-4 w-4" />
-              </span>
-            </div>
-            <p className="dash-kpi-value">{dash.closingSoonGroupCount}</p>
-            <p className="dash-kpi-hint">近七日截團團務</p>
-          </Link>
-
-          <Link className="dash-kpi" to={linkTo(dash.links.saleEndingGroups)}>
-            <div className="dash-kpi-top">
-              <p className="dash-kpi-label">即將結束販賣</p>
-              <span className="dash-kpi-icon">
-                <CalendarClock className="h-4 w-4" />
-              </span>
-            </div>
-            <p className="dash-kpi-value">{dash.saleEndingSoonGroupCount}</p>
-            <p className="dash-kpi-hint">近七日結束販賣</p>
-          </Link>
-        </div>
-      </section>
-
-      <section className="dash-section">
-        <div className="dash-section-head">
           <h2>快捷入口</h2>
         </div>
         <div className="dash-shortcuts">
+          <Link className="dash-shortcut" to="/inbound-month">
+            <strong>本月進倉</strong>
+            <span>依官方出貨月查看哪些團會到日本倉</span>
+          </Link>
           <Link className="dash-shortcut" to="/group-buy-center">
             <strong>開團中心</strong>
             <span>團務狀態、Excel、付款回報匯出</span>

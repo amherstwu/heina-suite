@@ -95,10 +95,12 @@ export function GroupBuyPreorderHubPage() {
   const [paymentTo, setPaymentTo] = useState('')
 
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set())
+  const [batchFilterStatus, setBatchFilterStatus] = useState<V50GroupStatus>('已登記')
   const [batchStatus, setBatchStatus] = useState<V50GroupStatus>('已登記')
   const [batchBusy, setBatchBusy] = useState(false)
   const [shipSelected, setShipSelected] = useState<Set<string>>(new Set())
   const [shipBusy, setShipBusy] = useState(false)
+  const [stockAddId, setStockAddId] = useState('')
 
   const customerFileRef = useRef<HTMLInputElement>(null)
   const [customerImportMsg, setCustomerImportMsg] = useState('')
@@ -116,6 +118,27 @@ export function GroupBuyPreorderHubPage() {
   const activeGroups = useMemo(
     () => filteredGroups.filter((g) => normalizeGroupStatus(g.status) !== '已結束'),
     [filteredGroups],
+  )
+
+  const batchCurrentStatuses = useMemo(
+    () => HUB_SELECTABLE_STATUSES.filter((s) => s !== '已結束'),
+    [],
+  )
+
+  const batchStatusCounts = useMemo(() => {
+    const counts: Partial<Record<V50GroupStatus, number>> = {}
+    for (const s of batchCurrentStatuses) counts[s] = 0
+    for (const g of activeGroups) {
+      const st = normalizeGroupStatus(g.status)
+      if (st === '已結束') continue
+      counts[st] = (counts[st] ?? 0) + 1
+    }
+    return counts
+  }, [activeGroups, batchCurrentStatuses])
+
+  const visibleBatchGroups = useMemo(
+    () => activeGroups.filter((g) => normalizeGroupStatus(g.status) === batchFilterStatus),
+    [activeGroups, batchFilterStatus],
   )
 
   const load = useCallback(async () => {
@@ -141,9 +164,12 @@ export function GroupBuyPreorderHubPage() {
     void load()
   }, [load])
 
-  useEffect(() => {
-    setBatchSelected(new Set(activeGroups.map((g) => g.id)))
-  }, [activeGroups])
+  const visibleBatchSelectedCount = useMemo(
+    () => visibleBatchGroups.reduce((n, g) => n + (batchSelected.has(g.id) ? 1 : 0), 0),
+    [visibleBatchGroups, batchSelected],
+  )
+  const allVisibleBatchSelected =
+    visibleBatchGroups.length > 0 && visibleBatchSelectedCount === visibleBatchGroups.length
 
   const persist = useCallback(
     async (
@@ -193,6 +219,28 @@ export function GroupBuyPreorderHubPage() {
     () => listImminentShippingGroups(filteredGroups, shipments, daigouOrders, daigouGroups),
     [filteredGroups, shipments, daigouOrders, daigouGroups],
   )
+
+  const stockWatchGroups = useMemo(
+    () => filteredGroups.filter((g) => g.stockAlert),
+    [filteredGroups],
+  )
+  const stockAddOptions = useMemo(
+    () => activeGroups.filter((g) => !g.stockAlert),
+    [activeGroups],
+  )
+
+  function saveStockWatch(groupId: string, on: boolean, note?: string) {
+    const next = groups.map((g) =>
+      g.id === groupId
+        ? {
+            ...g,
+            stockAlert: on,
+            stockAlertNote: note !== undefined ? note : g.stockAlertNote || '',
+          }
+        : g,
+    )
+    void persist(next)
+  }
 
   /** 出貨物流佇列中目前待出貨的每一筆（可勾選批次出貨） */
   const pendingShipRows = useMemo(
@@ -281,19 +329,27 @@ export function GroupBuyPreorderHubPage() {
   }
 
   async function applyBatchStatus() {
-    const ids = batchSelected
-    if (!ids.size) {
-      addToast('請至少選擇一個團務', 'err')
+    const visibleIds = new Set(visibleBatchGroups.map((g) => g.id))
+    const ids = [...batchSelected].filter((id) => visibleIds.has(id))
+    if (!ids.length) {
+      addToast('請先篩選狀態並勾選要修改的團務', 'err')
       return
     }
     setBatchBusy(true)
     try {
-      const next = groups.map((g) => (ids.has(g.id) ? { ...g, status: batchStatus } : g))
+      const idSet = new Set(ids)
+      const next = groups.map((g) => (idSet.has(g.id) ? { ...g, status: batchStatus } : g))
       await persist(next)
-      addToast(`已更新 ${ids.size} 個團務狀態為「${batchStatus}」`, 'ok')
+      setBatchSelected(new Set())
+      addToast(`已更新 ${ids.length} 個團務狀態為「${batchStatus}」`, 'ok')
     } finally {
       setBatchBusy(false)
     }
+  }
+
+  function changeBatchFilter(status: V50GroupStatus) {
+    setBatchFilterStatus(status)
+    setBatchSelected(new Set())
   }
 
   function toggleBatch(id: string) {
@@ -306,15 +362,20 @@ export function GroupBuyPreorderHubPage() {
   }
 
   function toggleBatchAll() {
-    if (batchSelected.size === activeGroups.length) setBatchSelected(new Set())
-    else setBatchSelected(new Set(activeGroups.map((g) => g.id)))
+    if (allVisibleBatchSelected) setBatchSelected(new Set())
+    else setBatchSelected(new Set(visibleBatchGroups.map((g) => g.id)))
   }
 
-  async function applyExcelImport(groupId: string, nextOrders: GroupBuyOrder[], summary: string) {
-    const next = groups.map((g) => (g.id === groupId ? { ...g, orders: nextOrders } : g))
-    const savedGroup = next.find((g) => g.id === groupId)
-    if (savedGroup) {
-      for (const o of nextOrders) syncV50OrderToDaigou(savedGroup, o)
+  async function applyExcelImport(
+    updates: { groupId: string; orders: GroupBuyOrder[] }[],
+    summary: string,
+  ) {
+    const byId = new Map(updates.map((u) => [u.groupId, u.orders]))
+    const next = groups.map((g) => (byId.has(g.id) ? { ...g, orders: byId.get(g.id)! } : g))
+    for (const g of next) {
+      const orders = byId.get(g.id)
+      if (!orders) continue
+      for (const o of orders) syncV50OrderToDaigou(g, o)
     }
     await persist(next)
     setStatusMsg(summary)
@@ -351,7 +412,6 @@ export function GroupBuyPreorderHubPage() {
 
       <PageHeader
         title="開團中心"
-        subtitle="通販團務總覽、待辦提醒與 Excel 捷徑（場販請至開團專區）"
         action={
           <div className="gb-hub-top-actions">
             <Btn variant="secondary" to="/groups">
@@ -423,6 +483,63 @@ export function GroupBuyPreorderHubPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="gb-hub-section" aria-label="缺貨待補">
+        <div className="gb-hub-section-label">
+          <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+          缺貨待補{stockWatchGroups.length ? ` · ${stockWatchGroups.length}` : ''}
+        </div>
+        <article className="gb-hub-card">
+          <div className="gb-hub-card-body gb-hub-stock">
+            <p className="gb-hub-note">購買時缺貨的團務可加入這裡，寫下缺哪一款。補到貨後取消勾選即可。</p>
+            <div className="gb-hub-stock-add">
+              <select value={stockAddId} onChange={(e) => setStockAddId(e.target.value)} aria-label="選擇要追蹤的團務">
+                <option value="">選擇團務…</option>
+                {stockAddOptions.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="gb-hub-text-btn"
+                disabled={!stockAddId}
+                onClick={() => {
+                  saveStockWatch(stockAddId, true, '')
+                  setStockAddId('')
+                }}
+              >
+                加入提醒
+              </button>
+            </div>
+            {stockWatchGroups.length === 0 ? (
+              <p className="gb-hub-empty">目前沒有缺貨待補的團務</p>
+            ) : (
+              <ul className="gb-hub-stock-list">
+                {stockWatchGroups.map((g) => (
+                  <li key={g.id} className="gb-hub-stock-row">
+                    <label className="gb-hub-check-row">
+                      <input type="checkbox" checked onChange={() => saveStockWatch(g.id, false)} />
+                      <span className="gb-hub-list-name">{g.name}</span>
+                    </label>
+                    <a className="gb-hub-text-btn" href={`#/groups?group=${encodeURIComponent(g.id)}`}>開啟團務</a>
+                    <input
+                      className="gb-hub-stock-note"
+                      defaultValue={g.stockAlertNote || ''}
+                      placeholder="備註，例如缺哪一款、下次再看"
+                      aria-label={`${g.name} 缺貨備註`}
+                      onBlur={(e) => {
+                        const note = e.target.value.trim()
+                        if (note === (g.stockAlertNote || '').trim()) return
+                        saveStockWatch(g.id, true, note)
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </article>
       </section>
 
       <section className="gb-hub-section" aria-label="待辦提醒">
@@ -522,19 +639,43 @@ export function GroupBuyPreorderHubPage() {
         <article className="gb-hub-card">
           <div className="gb-hub-card-head">
             <h2 className="gb-hub-card-title">批次修改狀態</h2>
-            <p className="gb-hub-card-desc">勾選進行中團務，一次更新團務狀態</p>
+            <p className="gb-hub-card-desc">先選目前狀態，再勾選要改的團務</p>
           </div>
           <div className="gb-hub-card-body">
             {activeGroups.length === 0 ? (
               <p className="gb-hub-empty">沒有可調整的進行中團務</p>
             ) : (
               <>
+                <div className="gb-hub-batch-filters" role="tablist" aria-label="目前狀態">
+                  {batchCurrentStatuses.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      role="tab"
+                      aria-selected={batchFilterStatus === s}
+                      className={
+                        'gb-hub-batch-filter' +
+                        (batchFilterStatus === s ? ' is-active' : '') +
+                        (!(batchStatusCounts[s] ?? 0) ? ' is-empty' : '')
+                      }
+                      onClick={() => changeBatchFilter(s)}
+                    >
+                      <span className="gb-hub-batch-filter-name">{HUB_STATUS_LABELS[s]}</span>
+                      <span className="gb-hub-batch-filter-count">{batchStatusCounts[s] ?? 0}</span>
+                    </button>
+                  ))}
+                </div>
                 <div className="gb-hub-batch-controls">
-                  <button type="button" className="gb-hub-text-btn" onClick={toggleBatchAll}>
-                    {batchSelected.size === activeGroups.length ? '取消全選' : '全選'}
+                  <button
+                    type="button"
+                    className="gb-hub-text-btn"
+                    onClick={toggleBatchAll}
+                    disabled={!visibleBatchGroups.length}
+                  >
+                    {allVisibleBatchSelected ? '取消全選' : '全選此狀態'}
                   </button>
                   <label className="gb-hub-batch-select">
-                    <span>新狀態</span>
+                    <span>改為</span>
                     <select
                       className="heina-input"
                       value={batchStatus}
@@ -547,14 +688,17 @@ export function GroupBuyPreorderHubPage() {
                   </label>
                   <Btn
                     className="!py-1.5 !text-xs"
-                    disabled={batchBusy || !batchSelected.size}
+                    disabled={batchBusy || !visibleBatchSelectedCount}
                     onClick={() => void applyBatchStatus()}
                   >
-                    {batchBusy ? '更新中…' : `套用 ${batchSelected.size} 團`}
+                    {batchBusy ? '更新中…' : `套用 ${visibleBatchSelectedCount} 團`}
                   </Btn>
                 </div>
-                <ul className="gb-hub-check-list">
-                  {activeGroups.map((g) => (
+                {visibleBatchGroups.length === 0 ? (
+                  <p className="gb-hub-empty">此狀態目前沒有團務</p>
+                ) : (
+                  <ul className="gb-hub-check-list">
+                    {visibleBatchGroups.map((g) => (
                       <li key={g.id}>
                         <label className="gb-hub-check-row">
                           <input
@@ -569,7 +713,8 @@ export function GroupBuyPreorderHubPage() {
                         </label>
                       </li>
                     ))}
-                </ul>
+                  </ul>
+                )}
               </>
             )}
           </div>
@@ -666,7 +811,7 @@ export function GroupBuyPreorderHubPage() {
                     <span className="gb-hub-action-icon"><FileUp className="h-4 w-4" aria-hidden /></span>
                     <span className="gb-hub-action-text">
                       <span className="gb-hub-action-name">匯入團務客訂</span>
-                      <span className="gb-hub-action-desc">多品項：僅第一列填名字</span>
+                      <span className="gb-hub-action-desc">多團同檔，確認後才寫入</span>
                     </span>
                   </button>
                   <button type="button" className="gb-hub-action" onClick={() => downloadV50OrderTemplateXlsx()}>
@@ -747,7 +892,7 @@ export function GroupBuyPreorderHubPage() {
           mode="import"
           groups={groups}
           onClose={() => setExcelModal(null)}
-          onImport={(groupId, nextOrders, summary) => void applyExcelImport(groupId, nextOrders, summary)}
+          onImport={(updates, summary) => void applyExcelImport(updates, summary)}
         />
       ) : null}
 

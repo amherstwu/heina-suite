@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Building2, Flag, Hand, Package, Plus, RefreshCw, ShoppingCart, Truck, FileDown, FileUp } from 'lucide-react'
 import { Btn, PageHeader } from '../../components/ui'
 import { useDaigouStore } from '../../daigou/store'
@@ -7,6 +7,7 @@ import { GroupSetupModal, type GroupSetupFormValues } from '../../components/gro
 import { useApi } from '../../context/useApi'
 import type {
   BankJournalRow,
+  ConsolidationShipment,
   GroupBuyAppData,
   GroupBuyGroup,
   GroupBuyOrder,
@@ -41,7 +42,9 @@ import { V50GroupExcelModal } from './V50GroupExcelModal'
 import { V50GroupCostPanel, type GroupCostSavePatch } from './V50GroupCostPanel'
 import { useAdminLayoutMode } from '../../layout/adminLayoutPreference'
 import { normalizeGroupImageUrls, primaryGroupImageUrl } from '../../pages/open-groups/openGroupImages'
+import { openGroupManageHref } from '../../pages/open-groups/openGroupsUtils'
 import { isInGroupOps } from './groupLifecycle'
+import { groupStatusesNeedSync, syncShipmentsFromGroupStatuses } from './consolidationLogic'
 import './v50GroupCard.css'
 import './groupbuy.css'
 import './v50OrderEntryModal.css'
@@ -140,6 +143,7 @@ export function V50GroupOpsPage() {
   const [groups, setGroups] = useState<GroupBuyGroup[]>([])
   const [bankJournal, setBankJournal] = useState<BankJournalRow[]>([])
   const [paymentReports, setPaymentReports] = useState<GroupBuyAppData['paymentReports']>([])
+  const [consolidationShipments, setConsolidationShipments] = useState<ConsolidationShipment[]>([])
   const [portalConfig, setPortalConfig] = useState<GroupBuyAppData['portalConfig'] | null>(null)
   const [exchangeRate, setExchangeRate] = useState(0.22)
   const [statusMsg, setStatusMsg] = useState('')
@@ -179,12 +183,32 @@ export function V50GroupOpsPage() {
     setLoading(true)
     try {
       const data = await api.call<GroupBuyAppData>({ module: 'groupbuy', action: 'getAppData' })
-      setGroups(data.groups || [])
-      for (const g of data.groups || []) syncV50GroupOrdersToDaigou(g)
+      const ships = data.consolidationShipments || []
+      const rawGroups = data.groups || []
+      const nextShips = syncShipmentsFromGroupStatuses(rawGroups, ships)
+      const synced = groupStatusesNeedSync(rawGroups, nextShips)
+      const nextGroups = synced ?? rawGroups
+      setGroups(nextGroups)
+      setConsolidationShipments(nextShips)
+      for (const g of nextGroups) syncV50GroupOrdersToDaigou(g)
       setBankJournal(data.bankJournal || [])
       setPaymentReports(data.paymentReports || [])
       setExchangeRate(data.exchangeRate ?? 0.22)
       setPortalConfig(data.portalConfig)
+      if (synced || nextShips !== ships) {
+        await api.call({
+          module: 'groupbuy',
+          action: 'saveAppData',
+          payload: {
+            groups: nextGroups,
+            bankJournal: data.bankJournal || [],
+            exchangeRate: data.exchangeRate ?? 0.22,
+            portalConfig: data.portalConfig,
+            paymentReports: data.paymentReports || [],
+            consolidationShipments: nextShips,
+          },
+        })
+      }
     } catch (e) {
       console.error(e)
       setStatusMsg('讀取失敗')
@@ -214,6 +238,7 @@ export function V50GroupOpsPage() {
     ) => {
       setStatusMsg('儲存中…')
       try {
+        const nextShips = syncShipmentsFromGroupStatuses(nextGroups, consolidationShipments)
         const payload: GroupBuySavePayload = {
           groups: nextGroups,
           bankJournal: nextJournal,
@@ -226,11 +251,13 @@ export function V50GroupOpsPage() {
             extraNote: '',
           },
           paymentReports: nextPaymentReports,
+          consolidationShipments: nextShips,
         }
         await api.call({ module: 'groupbuy', action: 'saveAppData', payload })
         setGroups(nextGroups)
         setBankJournal(nextJournal)
         setPaymentReports(nextPaymentReports)
+        setConsolidationShipments(nextShips)
         setStatusMsg('已儲存')
       } catch (e) {
         console.error(e)
@@ -238,7 +265,7 @@ export function V50GroupOpsPage() {
       }
       setTimeout(() => setStatusMsg(''), 2200)
     },
-    [api, bankJournal, exchangeRate, paymentReports, portalConfig],
+    [api, bankJournal, exchangeRate, paymentReports, portalConfig, consolidationShipments],
   )
 
   const opsGroups = useMemo(() => groups.filter(isInGroupOps), [groups])
@@ -391,13 +418,16 @@ export function V50GroupOpsPage() {
     setOrderOpen(true)
   }
 
-  async function applyExcelImport(groupId: string, nextOrders: GroupBuyOrder[], summary: string) {
-    const next = groups.map((g) =>
-      g.id === groupId ? { ...g, orders: nextOrders } : g,
-    )
-    const savedGroup = next.find((g) => g.id === groupId)
-    if (savedGroup) {
-      for (const o of nextOrders) syncV50OrderToDaigou(savedGroup, o)
+  async function applyExcelImport(
+    updates: { groupId: string; orders: GroupBuyOrder[] }[],
+    summary: string,
+  ) {
+    const byId = new Map(updates.map((u) => [u.groupId, u.orders]))
+    const next = groups.map((g) => (byId.has(g.id) ? { ...g, orders: byId.get(g.id)! } : g))
+    for (const g of next) {
+      const orders = byId.get(g.id)
+      if (!orders) continue
+      for (const o of orders) syncV50OrderToDaigou(g, o)
     }
     await persist(next)
     setStatusMsg(summary)
@@ -467,6 +497,53 @@ export function V50GroupOpsPage() {
     }
   }
 
+  async function markUnpaidOrdersCod() {
+    if (!viewGroup) return
+    const targets = (viewGroup.orders || []).filter((o) => {
+      const pay = String(o.paymentStatus || '').trim()
+      return !pay || pay === '未付款' || pay === 'unpaid'
+    })
+    if (!targets.length) {
+      setStatusMsg('這團沒有未付款的客訂')
+      setTimeout(() => setStatusMsg(''), 2200)
+      return
+    }
+    const ok = window.confirm(
+      `要把這團 ${targets.length} 筆「未付款」改成貨到付款嗎？\n已付訂金或已付款的客訂不會改。\n改完後這些筆不會再算進待收訂金。`,
+    )
+    if (!ok) return
+    let journal = bankJournal
+    let reports = paymentReports || []
+    const nextOrders = (viewGroup.orders || []).map((o) => {
+      const pay = String(o.paymentStatus || '').trim()
+      if (pay && pay !== '未付款' && pay !== 'unpaid') return o
+      const total = Number(o.totalTwd) || calcItemsTotalTwd(o.items || [])
+      const saved: GroupBuyOrder = {
+        ...o,
+        paymentStatus: '貨到付款',
+        totalTwd: total,
+        deposit: 0,
+        balance: calcOrderBalance(total, 0, o.domesticShip, o.intlShip),
+      }
+      const sync = syncPaymentReportsForOrderPaymentChange(
+        journal,
+        reports,
+        o.id,
+        pay || '未付款',
+        '貨到付款',
+      )
+      journal = sync.bankJournal
+      reports = sync.reports
+      return saved
+    })
+    const next = groups.map((g) => (g.id === viewGroup.id ? { ...g, orders: nextOrders } : g))
+    const savedGroup = next.find((g) => g.id === viewGroup.id)
+    if (savedGroup) syncV50GroupOrdersToDaigou(savedGroup)
+    await persist(next, journal, reports)
+    setStatusMsg(`已把 ${targets.length} 筆改為貨到付款，不再計入待收訂金`)
+    setTimeout(() => setStatusMsg(''), 2800)
+  }
+
   async function deleteOrder(order: GroupBuyOrder) {
     if (!viewGroupId) return
     const name = order.customerName?.trim() || '（未填名字）'
@@ -529,22 +606,21 @@ export function V50GroupOpsPage() {
         title="團務管理"
         action={
           <>
-            <Btn variant="secondary" to="/open-groups-preview">
-              開團專區
-            </Btn>
-            <Btn variant="secondary" onClick={() => setExcelModal('export')}>
-              <FileDown className="h-4 w-4" />
-              匯出 Excel
-            </Btn>
-            <Btn variant="secondary" onClick={() => setExcelModal('import')}>
-              <FileUp className="h-4 w-4" />
-              匯入 Excel
-            </Btn>
-            <Btn variant="secondary" onClick={() => void load()}>
-              <RefreshCw className="h-4 w-4" />
-              重新載入
-            </Btn>
-            <Btn onClick={openCreateGroup}>
+            <div className="v50-ops-tools">
+              <Btn variant="secondary" onClick={() => setExcelModal('export')}>
+                <FileDown className="h-4 w-4" />
+                匯出 Excel
+              </Btn>
+              <Btn variant="secondary" onClick={() => setExcelModal('import')}>
+                <FileUp className="h-4 w-4" />
+                匯入 Excel
+              </Btn>
+              <Btn variant="secondary" onClick={() => void load()}>
+                <RefreshCw className="h-4 w-4" />
+                重新載入
+              </Btn>
+            </div>
+            <Btn className="v50-ops-create-btn" onClick={openCreateGroup}>
               <Plus className="h-4 w-4" />
               新增團務
             </Btn>
@@ -646,9 +722,14 @@ export function V50GroupOpsPage() {
           </button>
           <div className="v50-group-detail-head">
             <h2 className="v50-group-detail-title">{viewGroup.name}</h2>
-            <button type="button" className="v50-gcard-edit-btn" onClick={() => openEditGroup(viewGroup)}>
-              編輯
-            </button>
+            <div className="v50-group-detail-head-actions">
+              <Link to={openGroupManageHref(viewGroup.id)} className="v50-gcard-jump">
+                開團
+              </Link>
+              <button type="button" className="v50-gcard-edit-btn" onClick={() => openEditGroup(viewGroup)}>
+                編輯
+              </button>
+            </div>
           </div>
           <V50GroupCostPanel
             group={viewGroup}
@@ -671,9 +752,12 @@ export function V50GroupOpsPage() {
               </span>
             </div>
           </div>
-          <Btn className="mb-4" onClick={openNewOrder}>
-            新增客訂
-          </Btn>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Btn onClick={openNewOrder}>新增客訂</Btn>
+            <Btn variant="secondary" onClick={() => void markUnpaidOrdersCod()}>
+              未付款整團改貨到付款
+            </Btn>
+          </div>
           <div className="v50-order-mini-list">
             {(viewGroup.orders || []).map((o) => (
               <V50OrderMiniCard
@@ -714,7 +798,7 @@ export function V50GroupOpsPage() {
           mode="import"
           groups={groups}
           onClose={() => setExcelModal(null)}
-          onImport={(groupId, nextOrders, summary) => void applyExcelImport(groupId, nextOrders, summary)}
+          onImport={(updates, summary) => void applyExcelImport(updates, summary)}
         />
       ) : null}
 

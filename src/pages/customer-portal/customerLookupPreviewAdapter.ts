@@ -98,11 +98,12 @@ function buildOrder(
 ): Order {
   const paymentStatus = v50PaymentToDaigou(order.paymentStatus)
   const items = mapItems(order.id, order.items)
-  const totalAmount = Number(order.totalTwd) || 0
+  const itemsTotal = Number(order.totalTwd) || 0
   const domesticShipping = Number(order.domesticShip) || 0
   const internationalShipping = Number(order.intlShip) || 0
-  const deposit = resolveV50Deposit(order.paymentStatus, totalAmount, order.deposit)
-  const balance = calcOrderBalance(totalAmount, deposit, domesticShipping, internationalShipping)
+  const totalAmount = itemsTotal + domesticShipping + internationalShipping
+  const deposit = resolveV50Deposit(order.paymentStatus, itemsTotal, order.deposit)
+  const balance = calcOrderBalance(itemsTotal, deposit, domesticShipping, internationalShipping)
   const totalReceived =
     paymentStatus === 'fully_paid' ? totalAmount : paymentStatus === 'deposit_paid' ? deposit : 0
   const isCod = order.paymentStatus === '貨到付款'

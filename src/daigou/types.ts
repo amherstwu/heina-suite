@@ -226,6 +226,8 @@ export type Customer = {
   totalUnpickedPackages?: number
   lastOrderAt?: string
   notes: string
+  /** 對客人可見／查單顯示的備註（與內部 notes 分開） */
+  customerNote?: string
   /** 面運抵扣、折扣、待補欠款等；出貨時可抵銷 */
   balanceMemos?: CustomerBalanceMemo[]
   /** 目前會員等級（買家端僅顯示等級名與福利，不顯示金額） */

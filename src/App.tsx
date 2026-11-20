@@ -16,6 +16,8 @@ import {
   LazyCustomerPortalPage,
   LazyCustomersPage,
   LazyDashboardPage,
+  LazyConsolidationPage,
+  LazyInboundMonthPage,
   LazyGroupBuyPage,
   LazyGroupBuyPreorderHubPage,
   LazyGroupDetailPage,
@@ -29,6 +31,7 @@ import {
   LazyPayablesPage,
   LazyPaymentReviewPage,
   LazyPaymentReportPage,
+  LazyJournalPage,
   LazyPortalPreviewPage,
   LazyPortalContentAdminPage,
   LazyBankViewerAdminPage,
@@ -60,6 +63,7 @@ import { agentLog } from './debug/agentLog'
 import { isGasHost } from './adapters/gas'
 import { hasRemoteGas } from './config/gasEndpoint'
 import { RouteFallback } from './components/app/RouteFallback'
+import { LocalPreviewBar } from './components/app/LocalPreviewBar'
 /** 新增頂層 `<Route path>` 時請同步 `src/router/hashPathPrefixes.ts`（path→hash 深連結）。 */
 
 /** 與 GAS 部署一致：一律 Hash，避免本機用 `/#/…` 時誤判為 `/` 而進錯頁 */
@@ -116,6 +120,7 @@ export default function App() {
       <PortalLookupSyncBridge />
       <DebugRouteTrace />
       <AgentDebugPanel />
+      <LocalPreviewBar />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* 預設入口：維持原顧客前台 #/lookup 為主 */}
@@ -143,6 +148,9 @@ export default function App() {
               <Route path="/dashboard" element={<LazyDashboardPage />} />
               <Route path="/groups" element={<LazyGroupsPage />} />
               <Route path="/groups/:id" element={<LazyGroupDetailPage />} />
+              <Route path="/consolidation" element={<LazyConsolidationPage />} />
+              <Route path="/consolidation/:shipmentId" element={<LazyConsolidationPage />} />
+              <Route path="/inbound-month" element={<LazyInboundMonthPage />} />
               <Route path="/open-groups-preview" element={<LazyAdminOpenGroupsPreviewPage />} />
               <Route path="/portal-content" element={<LazyPortalContentAdminPage />} />
               <Route path="/bank-viewer" element={<LazyBankViewerAdminPage />} />
@@ -171,6 +179,7 @@ export default function App() {
               <Route path="/nickname-search" element={<LazyAdminNicknameSearchPage />} />
               <Route path="/payment-review" element={<LazyPaymentReviewPage />} />
               <Route path="/payment-reports" element={<LazyPaymentReportPage />} />
+              <Route path="/journal" element={<LazyJournalPage />} />
               <Route path="/customer-preview" element={<LazyAdminCustomerPreviewPage />} />
               <Route path="/settings" element={<LazySettingsPage />} />
               <Route path="/integrations" element={<LazyIntegrationsPage />} />

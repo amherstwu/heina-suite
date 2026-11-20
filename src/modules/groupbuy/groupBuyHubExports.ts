@@ -170,6 +170,7 @@ const CUSTOMER_EXPORT_HEADERS = [
   '社群帳號',
   '查單密碼',
   '備註',
+  '對客備註',
 ] as const
 
 export function exportCustomersXlsx(customers: Customer[], filename?: string) {
@@ -184,6 +185,7 @@ export function exportCustomersXlsx(customers: Customer[], filename?: string) {
       c.socialAccount,
       c.lookupPin ?? '',
       c.notes,
+      c.customerNote ?? '',
     ]),
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '客人列表')
@@ -195,13 +197,13 @@ export function downloadCustomerImportTemplateXlsx() {
   const wb = XLSX.utils.book_new()
   const rows: (string | number)[][] = [
     [...CUSTOMER_EXPORT_HEADERS],
-    ['', '範例客人', 'LINE_範例', '123', '@line_id', '1234', '備註可選'],
+    ['', '範例客人', 'LINE_範例', '123', '@line_id', '1234', '內部備註可選', '對客備註可選'],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '客人列表')
   const note: (string | number)[][] = [
     ['匯入說明'],
     ['1. 有客戶ID則更新該客戶；無ID則以姓名比對，否則新增。'],
-    ['2. 僅更新：姓名、LINE顯示名、手機末三碼、社群帳號、查單密碼、備註。'],
+    ['2. 僅更新：姓名、LINE顯示名、手機末三碼、社群帳號、查單密碼、備註、對客備註。'],
     ['3. 查單密碼須為 4 位數字，同步至訂單自助查詢。'],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(note), '說明')
@@ -270,6 +272,7 @@ export function applyCustomerImportRows(
     const socialAccount = pick(row, '社群帳號', 'socialAccount')
     const lookupPinRaw = pick(row, '查單密碼', 'lookupPin', '查單PIN')
     const notes = pick(row, '備註', 'notes')
+    const customerNote = pick(row, '對客備註', 'customerNote')
 
     if (!name && !id) {
       skipped += 1
@@ -300,6 +303,7 @@ export function applyCustomerImportRows(
         else warnings.push(`第 ${i + 1} 列：查單密碼須為 4 位數字，已略過`)
       }
       if (notes) patch.notes = notes
+      if (customerNote) patch.customerNote = customerNote
       const idx = list.findIndex((c) => c.id === hit!.id)
       if (idx >= 0) {
         list[idx] = { ...list[idx], ...patch }
@@ -318,6 +322,7 @@ export function applyCustomerImportRows(
         totalOrders: 0,
         totalUnpaidBalance: 0,
         notes: notes || 'Excel匯入',
+        customerNote: customerNote || undefined,
       }
       if (lookupPinRaw) {
         const pin = normalizeLookupPin(lookupPinRaw)

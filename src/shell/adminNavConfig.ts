@@ -1,11 +1,13 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  Boxes,
   LayoutDashboard,
   Package,
   ScrollText,
   ShoppingCart,
   SearchCheck,
   ClipboardCheck,
+  ClipboardList,
   Users,
   Truck,
   FileSpreadsheet,
@@ -15,6 +17,7 @@ import {
   BookOpen,
   Landmark,
   Radio,
+  Building2,
 } from 'lucide-react'
 
 /** 後台主導覽（單一來源）：與側欄、手機抽屜、桌面「目前位置」解析共用 */
@@ -33,6 +36,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { to: '/dashboard', label: '營運總覽', short: '總覽', icon: LayoutDashboard, end: true, mobileQuick: true },
   { to: '/group-buy-center', label: '開團中心', short: '開團', icon: ScrollText },
   { to: '/groups', label: '團務管理', short: '團務', icon: Package, mobileQuick: true },
+  { to: '/inbound-month', label: '本月進倉', short: '進倉', icon: Building2 },
+  { to: '/consolidation', label: '集運', short: '集運', icon: Boxes },
   { to: '/open-groups-preview', label: '開團專區', short: '開團', icon: Megaphone },
   { to: '/portal-content', label: '訂單自助後台', short: '自助', icon: BookOpen },
   { to: '/bank-viewer', label: '銀行帳號查詢', short: '匯款', icon: Landmark },
@@ -41,6 +46,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { to: '/nickname-search', label: '暱稱查單', short: '查單', icon: SearchCheck, mobileQuick: true },
   { to: '/payment-review', label: '付款審核', short: '審核', icon: ClipboardCheck, mobileQuick: true },
   { to: '/payment-reports', label: '付款回報', short: '回報', icon: Inbox },
+  { to: '/journal', label: '日記帳', short: '日記', icon: ClipboardList },
   { to: '/customers', label: '客戶列表', short: '客戶', icon: Users },
   { to: '/shipping', label: '出貨物流', short: '出貨', icon: Truck },
   { to: '/integrations', label: '工具中心', short: '工具', icon: FileSpreadsheet },

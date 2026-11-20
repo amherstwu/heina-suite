@@ -1,10 +1,10 @@
-/** 行銷 AI 插圖（Vite 打包進 GAS 單檔） */
-import heroImg from '../../assets/marketing/heina-marketing-hero.png'
-import goodsImg from '../../assets/marketing/heina-marketing-goods.png'
-import shippingImg from '../../assets/marketing/heina-marketing-shipping.png'
-import galleryImg from '../../assets/marketing/heina-marketing-gallery.png'
-import serviceImg from '../../assets/marketing/heina-marketing-service.png'
-import streetImg from '../../assets/marketing/heina-marketing-street.png'
+/** 行銷插圖：使用壓縮 JPG，避免 GAS 單檔 HTML 過大（原 PNG 合計十數 MB） */
+import heroImg from '../../assets/marketing/gas/heina-marketing-hero.jpg'
+import goodsImg from '../../assets/marketing/gas/heina-marketing-goods.jpg'
+import shippingImg from '../../assets/marketing/gas/heina-marketing-shipping.jpg'
+import galleryImg from '../../assets/marketing/gas/heina-marketing-gallery.jpg'
+import serviceImg from '../../assets/marketing/gas/heina-marketing-service.jpg'
+import streetImg from '../../assets/marketing/gas/heina-marketing-street.jpg'
 
 export const PORTAL_MARKETING_IMAGES = {
   hero: heroImg,

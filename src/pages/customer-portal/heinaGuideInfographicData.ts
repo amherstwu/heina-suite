@@ -1,6 +1,6 @@
-import rulesImg from '../../assets/marketing/heina-guide-rules.png'
-import shoppingFlowImg from '../../assets/marketing/heina-guide-shopping-flow.png'
-import exchangeRateImg from '../../assets/marketing/heina-guide-exchange-rate.png'
+import rulesImg from '../../assets/marketing/gas/heina-guide-rules.jpg'
+import shoppingFlowImg from '../../assets/marketing/gas/heina-guide-shopping-flow.jpg'
+import exchangeRateImg from '../../assets/marketing/gas/heina-guide-exchange-rate.jpg'
 
 export type HeinaGuideInfographic = {
   id: string

@@ -3,6 +3,7 @@ import type {
   CustomerLookupMatch,
   GroupBuyAppData,
   GroupBuySavePayload,
+  SaveBankJournalPayload,
   ConfirmPaymentReportPayload,
   DeletePaymentReportPayload,
   LedgerAddTxBody,
@@ -43,6 +44,7 @@ import {
   createPaymentReport,
   validateSubmitPaymentReport,
 } from '../modules/groupbuy/paymentReportLogic'
+import { upsertJournalRows } from '../modules/groupbuy/journalLogic'
 import { listPortalCatalogGroups } from '../pages/open-groups/openGroupsUtils'
 import { normalizeGroupImageUrls } from '../pages/open-groups/openGroupImages'
 import { agentLog } from '../debug/agentLog'
@@ -315,7 +317,7 @@ export function createMockClient(): UnifiedClient {
           const existing = loadGroupBuyStored()
           persistGroupBuy({
             groups: p.groups,
-            bankJournal: p.bankJournal,
+            bankJournal: existing.bankJournal || [],
             exchangeRate: p.exchangeRate,
             portalConfig: { ...defaultPortal, ...p.portalConfig },
             paymentReports: p.paymentReports ?? existing.paymentReports ?? [],
@@ -323,9 +325,22 @@ export function createMockClient(): UnifiedClient {
               p.portalLookupCustomers ?? existing.portalLookupCustomers ?? [],
             customerBalanceMemos:
               p.customerBalanceMemos ?? existing.customerBalanceMemos ?? [],
+            consolidationShipments:
+              p.consolidationShipments ?? existing.consolidationShipments ?? [],
             bankViewerFull: existing.bankViewerFull,
           })
           return { status: 'success' } as T
+        }
+        if (action === 'saveBankJournal') {
+          const p = payload as SaveBankJournalPayload
+          const existing = loadGroupBuyStored()
+          const incoming = p.bankJournal || []
+          const next =
+            p.mode === 'upsert'
+              ? upsertJournalRows(existing.bankJournal || [], incoming)
+              : incoming
+          persistGroupBuy({ ...existing, bankJournal: next })
+          return { status: 'success', bankJournal: next } as T
         }
         if (action === 'submitPaymentReport') {
           const pl = payload as SubmitCustomerPaymentReportPayload

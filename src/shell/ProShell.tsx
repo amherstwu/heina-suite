@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Menu,
   LogOut,
+  Store,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { APP_BRAND_CORE, APP_BRAND_SHOP, APP_NAME } from '../daigou/constants'
@@ -85,6 +86,12 @@ export function ProShell() {
             </div>
             <div className="admin-mobile-top-actions flex shrink-0 items-center gap-1">
               <AdminLayoutToggle mode={layoutMode} onChange={setLayoutMode} className="admin-layout-toggle--compact" />
+              <NavLink
+                to="/lookup"
+                className="flex h-11 max-w-[7.5rem] items-center justify-center rounded-xl px-2 text-[11px] font-extrabold leading-tight text-ds-primary transition hover:bg-ds-primary/10 active:bg-ds-primary/16"
+              >
+                自助查詢
+              </NavLink>
               <button
                 type="button"
                 aria-label="開啟選單"
@@ -182,28 +189,38 @@ export function ProShell() {
 
       <AppDrawer open={moreOpen} title="更多" onClose={() => setMoreOpen(false)} side="right">
         <div className="flex flex-col gap-1">
-          <div className="mb-2 flex flex-wrap gap-2 px-3 pt-1">
+          <div className="mb-2 flex flex-col gap-2 px-3 pt-1">
             <Btn
-              variant="secondary"
-              className="!min-h-11 flex-1 !text-sm"
-              type="button"
-              onClick={() => {
-                setMoreOpen(false)
-                clearAdminSession()
-                navigate('/login')
-              }}
-            >
-              <LogOut className="mr-1 inline h-3.5 w-3.5" strokeWidth={1.75} />
-              登出
-            </Btn>
-            <Btn
-              variant="secondary"
-              className="!min-h-11 flex-1 !text-sm"
-              to="/customer-preview"
+              className="!min-h-11 w-full !text-sm"
+              to="/lookup"
               onClick={() => setMoreOpen(false)}
             >
-              前台預覽
+              <Store className="mr-1 inline h-4 w-4" strokeWidth={1.75} />
+              Heina訂單自助查詢
             </Btn>
+            <div className="flex flex-wrap gap-2">
+              <Btn
+                variant="secondary"
+                className="!min-h-11 flex-1 !text-sm"
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false)
+                  clearAdminSession()
+                  navigate('/login')
+                }}
+              >
+                <LogOut className="mr-1 inline h-3.5 w-3.5" strokeWidth={1.75} />
+                登出
+              </Btn>
+              <Btn
+                variant="secondary"
+                className="!min-h-11 flex-1 !text-sm"
+                to="/customer-preview"
+                onClick={() => setMoreOpen(false)}
+              >
+                前台預覽
+              </Btn>
+            </div>
           </div>
           <div className="px-3 pb-0.5 pt-2 text-[11px] font-semibold tracking-wide text-ds-text-muted">主選單</div>
           {ADMIN_NAV_ITEMS.map((item) => {

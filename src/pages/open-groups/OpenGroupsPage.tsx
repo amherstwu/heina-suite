@@ -262,11 +262,11 @@ export function OpenGroupsPage({ embedded = false, variant = 'public' }: Props) 
           <div className="og-header-text">
             <p className="og-eyebrow">Heina Shop</p>
             <h1 className="og-title">{canEdit ? '開團專區' : '開團專區(場販+通販)'}</h1>
-            <p className="og-lead">
-              {canEdit
-                ? `管理開團預告與成團；可釘選最多 ${HOME_OPEN_GROUP_PIN_LIMIT} 團到顧客專區首頁。客人從訂單查詢進入的是純瀏覽版。`
-                : '這裡可一目瞭然查看開團資訊；喊單請前往記事本留言，也可用關鍵字搜尋團務。'}
-            </p>
+            {!canEdit ? (
+              <p className="og-lead">
+                這裡可一目瞭然查看開團資訊；喊單請前往記事本留言，也可用關鍵字搜尋團務。
+              </p>
+            ) : null}
           </div>
           {canEdit ? (
             <div className="og-header-actions">
@@ -363,19 +363,10 @@ export function OpenGroupsPage({ embedded = false, variant = 'public' }: Props) 
           {filtered.length ? ` · ${filtered.length} 團` : null}
         </p>
 
-        {canEdit ? (
-          <div className="og-pin-banner" role="status">
-            <p className="og-pin-banner-title">
-              顧客專區首頁釘選（最多 {HOME_OPEN_GROUP_PIN_LIMIT} 團）
-            </p>
-            <p className="og-pin-banner-body">
-              {homePins.length
-                ? `目前已釘選 ${homePins.length}/${HOME_OPEN_GROUP_PIN_LIMIT} 團，會顯示在訂單查詢頁的開團預覽。`
-                : `尚未釘選。請在小卡按「釘選至顧客首頁」，未釘選時系統會自動挑最新 ${HOME_OPEN_GROUP_PIN_LIMIT} 團。`}
-            </p>
-            {pinMsg ? <p className="og-pin-banner-msg">{pinMsg}</p> : null}
-            {pinSaving ? <p className="og-pin-banner-msg">儲存中…</p> : null}
-          </div>
+        {canEdit && (pinMsg || pinSaving) ? (
+          <p className="og-pin-banner-msg" role="status">
+            {pinSaving ? '儲存中…' : pinMsg}
+          </p>
         ) : null}
 
         {loading ? <p className="og-state">載入中…</p> : null}

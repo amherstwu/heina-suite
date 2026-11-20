@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, Search, Trash2, Truck } from 'lucide-react'
 import { Card, Btn, PageHeader, Chip, Empty } from '../components/ui'
+import { BalanceMemoCollapsible } from '../components/customers/CustomerBalanceMemoPanel'
+import { CustomerNoteField } from '../components/customers/CustomerNoteField'
 import { useDaigouStore } from '../daigou/store'
 import type { Customer, Group, Order, Shipment } from '../daigou/types'
 import { downloadCsv } from '../daigou/csv'
@@ -91,6 +93,7 @@ export function ShippingPage() {
   const revertShipmentToPending = useDaigouStore((s) => s.revertShipmentToPending)
   const deleteShipments = useDaigouStore((s) => s.deleteShipments)
   const settleCustomerBalanceMemos = useDaigouStore((s) => s.settleCustomerBalanceMemos)
+  const updateCustomer = useDaigouStore((s) => s.updateCustomer)
   const addToast = useDaigouStore((s) => s.addToast)
   const clearLiveSyncedOrderIds = useLiveStore((s) => s.clearSyncedOrderIds)
 
@@ -537,8 +540,13 @@ export function ShippingPage() {
                 {expanded ? (
                   <>
                     {openMemos.length > 0 && group.customerId ? (
-                      <div className="shipping-balance-memos" onClick={(e) => e.stopPropagation()}>
-                        <p className="shipping-balance-memos-title">帳務備註（出貨時抵銷）</p>
+                      <BalanceMemoCollapsible
+                        title="帳務備註（出貨時抵銷）"
+                        summary={`${openMemos.length} 筆 · 合計 ${formatMemoAmount(memoAdjust)}`}
+                        className="shipping-balance-memos"
+                        storageKey={`heina.ship.cbm.${group.customerId}`}
+                        onToggleClick={(e) => e.stopPropagation()}
+                      >
                         <ul className="shipping-balance-memos-list">
                           {openMemos.map((m) => {
                             const amt = memoAdjustAmount(m)
@@ -560,6 +568,15 @@ export function ShippingPage() {
                         <Link className="shipping-balance-memos-edit" to={`/customers/${group.customerId}`}>
                           編輯帳務備註
                         </Link>
+                      </BalanceMemoCollapsible>
+                    ) : null}
+                    {group.customerId && cust ? (
+                      <div className="shipping-customer-note" onClick={(e) => e.stopPropagation()}>
+                        <CustomerNoteField
+                          compact
+                          value={cust.customerNote}
+                          onSave={(next) => updateCustomer(group.customerId!, { customerNote: next })}
+                        />
                       </div>
                     ) : null}
                     <div className="shipping-customer-ship-bar" onClick={(e) => e.stopPropagation()}>

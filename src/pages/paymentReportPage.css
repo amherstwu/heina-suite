@@ -168,11 +168,38 @@
 }
 
 .payment-report-page header .inline-flex[href*="/payment-review"],
-.payment-report-page header a[href*="/payment-review"] {
+.payment-report-page header a[href*="/payment-review"],
+.payment-report-page header .pr-review-shortcut {
   background: var(--jn-lav-bg) !important;
   border-color: var(--jn-lav-line) !important;
   color: var(--pr-lav-deep) !important;
   box-shadow: none !important;
+}
+
+/* 兩顆頂部按鈕綁成一組，避免手機版第二顆被拉成整行 */
+.payment-report-page .pr-header-actions {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  width: max-content;
+  max-width: 100%;
+}
+
+.payment-report-page .pr-header-actions .pr-reload-btn,
+.payment-report-page .pr-header-actions .pr-review-shortcut {
+  width: auto !important;
+  min-height: 2.25rem !important;
+  padding: 0.28rem 0.65rem !important;
+  font-size: 0.75rem !important;
+  white-space: nowrap;
+}
+
+.payment-report-page .pr-header-actions svg {
+  width: 0.85rem;
+  height: 0.85rem;
 }
 
 .pr-page {
@@ -1220,6 +1247,33 @@
 
 /* 手機／後台手機預覽：標籤橫向並排，過窄才換行（避免桌機斷點把側欄擠成直排） */
 @media (max-width: 767.98px) {
+  html:not([data-admin-view='desktop']) .payment-report-page .admin-page-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    align-items: center;
+    column-gap: 0.5rem;
+    row-gap: 0;
+  }
+
+  html:not([data-admin-view='desktop']) .payment-report-page .admin-page-header-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  html:not([data-admin-view='desktop']) .payment-report-page .admin-page-header-actions,
+  html:not([data-admin-view='desktop']) .payment-report-page .pr-header-actions {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.4rem;
+    width: auto !important;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
   .pr-card-head {
     flex-direction: column;
   }

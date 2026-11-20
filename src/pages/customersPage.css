@@ -224,6 +224,34 @@
   border-color: #d4c8ea;
 }
 
+.customer-joined-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.45rem 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #d4c8ea;
+  background: #f3eefc;
+  color: #7a68a8;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.customer-joined-edit input[type='date'] {
+  min-width: 8.5rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  margin: 0;
+}
+
+.customer-joined-edit input[type='date']:focus {
+  outline: none;
+}
+
 .customer-stats {
   text-align: right;
   margin-left: auto;

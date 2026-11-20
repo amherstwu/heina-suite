@@ -123,13 +123,13 @@
 }
 
 .og-header-link--solid {
-  background: var(--og-primary);
+  background: #ee8aa2;
   color: #fff;
-  border-color: var(--og-primary-deep);
+  border-color: #e07a94;
 }
 
 .og-header-link--solid:hover {
-  background: var(--og-primary-deep);
+  background: #e07a94;
   color: #fff;
 }
 
@@ -166,21 +166,21 @@
 }
 
 .og-channel-pill--all {
-  background: #fff4ec;
-  border-color: #f0d4c0;
-  color: #8a5a3c;
+  background: #fde7ee;
+  border-color: #f3b7c6;
+  color: #b85d74;
 }
 
 .og-channel-pill--venue {
-  background: #fff8e8;
-  border-color: #f0d9a8;
-  color: #9a6b20;
+  background: #f8e4d4;
+  border-color: #e8c4a8;
+  color: #8d5a3a;
 }
 
 .og-channel-pill--mail {
-  background: #eef9f6;
-  border-color: #b8e0d6;
-  color: #2a7a6e;
+  background: #e3f3ea;
+  border-color: #b7d7c4;
+  color: #3f6d58;
 }
 
 .og-channel-pill:hover {
@@ -194,21 +194,21 @@
 }
 
 .og-channel-pill--all.og-channel-pill--active {
-  border-color: rgba(196, 92, 38, 0.55);
-  background: linear-gradient(180deg, #ffe8d8, #fff4ec);
-  color: #7a3d1a;
+  border-color: #ee8aa2;
+  background: #f8d0dc;
+  color: #9a4560;
 }
 
 .og-channel-pill--venue.og-channel-pill--active {
-  border-color: rgba(217, 119, 6, 0.55);
-  background: linear-gradient(180deg, #ffefc8, #fff8e8);
-  color: #8a5508;
+  border-color: #d59a78;
+  background: #f3d2bc;
+  color: #7a4a30;
 }
 
 .og-channel-pill--mail.og-channel-pill--active {
-  border-color: rgba(13, 148, 136, 0.5);
-  background: linear-gradient(180deg, #d8f3ee, #eef9f6);
-  color: #0f6b5f;
+  border-color: #74b39a;
+  background: #d5ebe0;
+  color: #2f6a52;
 }
 
 .og-channel-pill-label {
@@ -386,9 +386,9 @@
 }
 
 .og-tab--active {
-  background: var(--og-primary);
+  background: #ee8aa2;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(196, 92, 38, 0.28);
+  box-shadow: 0 4px 14px rgba(238, 138, 162, 0.35);
 }
 
 .og-tab-count {
@@ -504,6 +504,37 @@
   margin-top: 0;
 }
 
+.og-card-foot-links {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.og-card-foot-links .og-card-edit {
+  flex: 1;
+}
+
+.og-card-ops-jump {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 2.15rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.65rem;
+  background: #eef4fb;
+  color: #2f5f7a;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.og-card-ops-jump:hover {
+  background: #dceaf6;
+  color: #1d4a66;
+}
+
 .og-pin-banner {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
@@ -548,7 +579,7 @@
 .og-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--og-line);
+  border: 1.5px solid #a898ae;
   border-radius: 1rem;
   background: var(--og-surface);
   overflow: hidden;
@@ -565,7 +596,7 @@
 }
 
 .og-card-link:hover {
-  border-color: rgba(196, 92, 38, 0.35);
+  border-color: #a898ae;
   box-shadow: 0 10px 28px rgba(61, 47, 42, 0.1);
   transform: translateY(-2px);
 }
@@ -636,7 +667,7 @@
   object-fit: contain;
   object-position: center;
   display: block;
-  background: #f5ebe3;
+  background: #fff;
 }
 
 .og-card-photo--empty {
@@ -918,17 +949,17 @@
 }
 
 .og-detail-back--admin {
-  padding: 0.65rem 1.1rem;
+  padding: 0.32rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid var(--og-primary-deep);
-  background: var(--og-primary);
+  border: 1px solid #e07a94;
+  background: #ee8aa2;
   color: #fff;
-  font-size: 0.95rem;
-  box-shadow: 0 4px 14px rgba(154, 69, 24, 0.28);
+  font-size: 0.78rem;
+  box-shadow: 0 3px 10px rgba(238, 138, 162, 0.28);
 }
 
 .og-detail-back--admin:hover {
-  background: var(--og-primary-deep);
+  background: #e07a94;
 }
 
 .og-detail-back-cta {
@@ -939,18 +970,18 @@
   width: 100%;
   min-height: 3rem;
   padding: 0.75rem 1.15rem;
-  border: 1px solid var(--og-primary-deep);
+  border: 1px solid #e07a94;
   border-radius: 0.85rem;
-  background: var(--og-primary);
+  background: #ee8aa2;
   color: #fff;
   font-size: 1rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(154, 69, 24, 0.3);
+  box-shadow: 0 6px 18px rgba(238, 138, 162, 0.3);
 }
 
 .og-detail-back-cta:hover {
-  background: var(--og-primary-deep);
+  background: #e07a94;
 }
 
 .og-detail {
@@ -1096,12 +1127,12 @@
   padding: 0.6rem 1.05rem;
   border: none;
   border-radius: 999px;
-  background: var(--og-primary);
+  background: #ee8aa2;
   color: #fff;
   font-size: 0.8125rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(196, 92, 38, 0.25);
+  box-shadow: 0 4px 14px rgba(238, 138, 162, 0.28);
 }
 
 .og-detail-edit-btn:disabled,
@@ -1277,7 +1308,8 @@
   }
 
   .og-grid {
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
   }
 
   .og-card-wrap .og-card,
@@ -1285,6 +1317,7 @@
     flex-direction: column;
     align-items: stretch;
     border-radius: 0.85rem;
+    border-width: 1.5px;
   }
 
   .og-card-wrap .og-card-link:hover {
@@ -1386,10 +1419,10 @@
   }
 
   .og-detail-back--admin {
-    width: 100%;
+    width: auto;
     justify-content: center;
-    min-height: 2.85rem;
-    border-radius: 0.85rem;
+    min-height: 0;
+    border-radius: 999px;
   }
 
   .og-detail-back-cta {
@@ -1462,6 +1495,38 @@
     min-height: 2.75rem;
     align-self: stretch;
     text-align: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .og-grid {
+    gap: 0.5rem;
+  }
+
+  .og-card-wrap .og-card-body {
+    padding: 0.5rem 0.45rem 0.55rem;
+    gap: 0.35rem;
+  }
+
+  .og-card-title {
+    font-size: 0.78rem;
+  }
+
+  .og-card-channel,
+  .og-card-lifecycle,
+  .og-card-status {
+    padding: 0.1rem 0.32rem;
+    font-size: 0.6rem;
+  }
+
+  .og-card-meta {
+    gap: 0.2rem 0.3rem;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .og-card-more {
+    font-size: 0.68rem;
   }
 }
 
@@ -1604,8 +1669,8 @@ html[data-admin-view='mobile'] .og-sort-pill {
 }
 
 html[data-admin-view='mobile'] .og-grid {
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
 }
 
 html[data-admin-view='mobile'] .og-card-wrap .og-card,
@@ -1613,6 +1678,7 @@ html[data-admin-view='mobile'] .og-card-wrap .og-card-link {
   flex-direction: column;
   align-items: stretch;
   border-radius: 0.85rem;
+  border-width: 1.5px;
 }
 
 html[data-admin-view='mobile'] .og-card-wrap .og-card-link:hover {
@@ -1691,6 +1757,12 @@ html[data-admin-view='mobile'] .og-card-edit {
   font-size: 0.8125rem;
 }
 
+html[data-admin-view='mobile'] .og-card-ops-jump {
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+}
+
 html[data-admin-view='mobile'] .og-pin-banner {
   padding: 0.75rem 0.85rem;
 }
@@ -1728,10 +1800,10 @@ html[data-admin-view='mobile'] .og-detail-back {
 }
 
 html[data-admin-view='mobile'] .og-detail-back--admin {
-  width: 100%;
+  width: auto;
   justify-content: center;
-  min-height: 2.85rem;
-  border-radius: 0.85rem;
+  min-height: 0;
+  border-radius: 999px;
 }
 
 html[data-admin-view='mobile'] .og-detail-back-cta {

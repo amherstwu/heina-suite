@@ -258,7 +258,7 @@ function gb_ensureDefaultSettings_() {
     ['portalWebsiteUrl', existing.portalWebsiteUrl != null ? existing.portalWebsiteUrl : ''],
     ['portalGroupUrl', existing.portalGroupUrl != null ? existing.portalGroupUrl : ''],
     ['portalExtraNote', existing.portalExtraNote != null ? existing.portalExtraNote : '付款後請填寫：付款日期、後五碼，等待對帳完成後即可在此查看狀態。'],
-    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的名字。若有改名或無法查詢請私訊官方 LINE。查單密碼為 4 位數字，可自行修改。']
+    ['portalLookupDesc', existing.portalLookupDesc != null ? existing.portalLookupDesc : '請輸入在社群裡的名字，若有改名或無法查詢請私訊官方LINE，預設密碼 1314，可自行修改']
   ];
   var appendRows = [];
   for (var d = 0; d < defaults.length; d++) {

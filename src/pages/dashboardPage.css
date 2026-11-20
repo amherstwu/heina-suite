@@ -15,16 +15,19 @@
   --d-amber-bg: #fff6e8;
   --d-rose: #9a3b4a;
   --d-rose-bg: #fceef1;
+  --d-lilac: #6d5a8a;
+  --d-lilac-bg: #f3eef8;
+  --d-peach: #a86a48;
+  --d-peach-bg: #fff1e8;
   --d-radius: 16px;
   max-width: 1120px;
 }
 
 .dash-hero {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
   margin-bottom: 1.25rem;
   padding: 1.15rem 1.25rem;
   border-radius: var(--d-radius);
@@ -33,6 +36,28 @@
     radial-gradient(120% 90% at 0% 0%, #e8f4fc 0%, transparent 55%),
     radial-gradient(90% 80% at 100% 0%, #e9f7f1 0%, transparent 50%),
     linear-gradient(180deg, #fbfcfd, #f5f8fb);
+}
+
+.dash-hero-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dash-hero-center-btn {
+  flex: 0 0 auto;
+  min-height: 2.25rem !important;
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.8rem !important;
+  white-space: nowrap;
+}
+
+.admin-shell.admin-view-mobile .dash-hero-title-row,
+html[data-admin-view='mobile'] .dash-hero-title-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .dash-hero-kicker {
@@ -62,7 +87,8 @@
 
 .dash-hero-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 0.45rem;
 }
 
@@ -111,6 +137,10 @@
   .dash-kpi-grid--2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .dash-kpi-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .dash-kpi {
@@ -136,6 +166,8 @@
 .dash-kpi--mint { background: var(--d-mint-bg); border-color: #b8dfcb; }
 .dash-kpi--amber { background: var(--d-amber-bg); border-color: #ecd4a8; }
 .dash-kpi--rose { background: var(--d-rose-bg); border-color: #efc5cd; }
+.dash-kpi--lilac { background: var(--d-lilac-bg); border-color: #ddd0ea; }
+.dash-kpi--peach { background: var(--d-peach-bg); border-color: #f0d4c4; }
 
 .dash-kpi-top {
   display: flex;
@@ -164,6 +196,8 @@
 .dash-kpi--mint .dash-kpi-icon { color: var(--d-mint); }
 .dash-kpi--amber .dash-kpi-icon { color: var(--d-amber); }
 .dash-kpi--rose .dash-kpi-icon { color: var(--d-rose); }
+.dash-kpi--lilac .dash-kpi-icon { color: var(--d-lilac); }
+.dash-kpi--peach .dash-kpi-icon { color: var(--d-peach); }
 
 .dash-kpi-value {
   margin: 0;
@@ -407,6 +441,9 @@
 .dash-deposit-table {
   display: flex;
   flex-direction: column;
+  max-height: 20rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .dash-deposit-table-head,
@@ -419,6 +456,9 @@
 }
 
 .dash-deposit-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   border-bottom: 1px solid #f0d0d8;
   background: #fff5f8;
   font-size: 0.7rem;

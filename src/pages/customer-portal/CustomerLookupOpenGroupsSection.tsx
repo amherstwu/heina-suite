@@ -6,14 +6,71 @@ import type { PublicGroupCatalogItem } from '../../api/types'
 import { HOME_OPEN_GROUP_PIN_LIMIT } from './mergePortal'
 import {
   listClosingSoonPublicGroups,
+  matchesOpenGroupChannel,
   openGroupsListHref,
   pickHomeOpenGroupPreview,
+  type OpenGroupChannelFilter,
 } from '../open-groups/openGroupsUtils'
 import { LookupGroupPosterCard } from './LookupGroupPosterCard'
 
 const PREVIEW_LIMIT = HOME_OPEN_GROUP_PIN_LIMIT
 const CLOSING_SOON_DAYS = 5
 const CLOSING_SOON_HOME_LIMIT = 3
+
+function OpenGroupChannelPreview({
+  title,
+  channel,
+  groups,
+  pinnedIds,
+  loading,
+}: {
+  title: string
+  channel: Exclude<OpenGroupChannelFilter, '全部'>
+  groups: PublicGroupCatalogItem[]
+  pinnedIds: string[]
+  loading: boolean
+}) {
+  const preview = useMemo(
+    () => pickHomeOpenGroupPreview(groups, pinnedIds, PREVIEW_LIMIT),
+    [groups, pinnedIds],
+  )
+  const moreCount = Math.max(0, groups.length - preview.length)
+  const headingId = channel === '通販' ? 'lk-open-groups-mail-title' : 'lk-open-groups-venue-title'
+
+  return (
+    <div className={'lk-og-channel' + (channel === '場販' ? ' lk-og-channel--venue' : ' lk-og-channel--mail')}>
+      <div className="lk-site-block-head lk-site-block-head--sub">
+        <h3 id={headingId} className="lk-site-block-subtitle">
+          {title}
+          <span className="lk-og-channel-count">{groups.length}</span>
+        </h3>
+      </div>
+
+      {loading ? (
+        <p className="lk-og-empty">載入開團資訊中…</p>
+      ) : preview.length === 0 ? (
+        <p className="lk-og-empty">目前沒有公開的{title}開團</p>
+      ) : (
+        <div className="lk-og-rail" role="list">
+          {preview.map((g) => (
+            <div key={g.id} className="lk-og-rail-item" role="listitem">
+              <LookupGroupPosterCard group={g} pinned={pinnedIds.includes(g.id)} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="lk-og-cta-wrap">
+        <Link to={openGroupsListHref(channel)} className="lk-og-cta">
+          <span className="lk-og-cta-label">
+            {moreCount > 0 ? `查看其他${title}（還有 ${moreCount} 團）` : `前往${title}開團專區`}
+          </span>
+          <ArrowRight className="lk-og-cta-icon" size={20} aria-hidden />
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 export function CustomerLookupOpenGroupsSection() {
   const api = useApi()
@@ -53,10 +110,8 @@ export function CustomerLookupOpenGroupsSection() {
     }
   }, [api])
 
-  const preview = useMemo(
-    () => pickHomeOpenGroupPreview(groups, pinnedIds, PREVIEW_LIMIT),
-    [groups, pinnedIds],
-  )
+  const mailGroups = useMemo(() => groups.filter((g) => matchesOpenGroupChannel(g, '通販')), [groups])
+  const venueGroups = useMemo(() => groups.filter((g) => matchesOpenGroupChannel(g, '場販')), [groups])
 
   const closingSoonAll = useMemo(
     () => listClosingSoonPublicGroups(groups, CLOSING_SOON_DAYS),
@@ -67,8 +122,6 @@ export function CustomerLookupOpenGroupsSection() {
     [closingSoonAll],
   )
   const closingMoreCount = Math.max(0, closingSoonAll.length - closingSoon.length)
-
-  const moreCount = Math.max(0, groups.length - preview.length)
 
   return (
     <>
@@ -118,35 +171,27 @@ export function CustomerLookupOpenGroupsSection() {
       <section className="lk-site-block" id="open-groups" aria-labelledby="lk-open-groups-title">
         <div className="lk-site-block-head">
           <h2 id="lk-open-groups-title" className="lk-site-block-title">
-            開團專區(場販+通販)
+            開團專區
           </h2>
           <p className="lk-og-shout-note">
             喊單請前往記事本留言，也可用關鍵字搜尋團務
           </p>
         </div>
 
-        {loading ? (
-          <p className="lk-og-empty">載入開團資訊中…</p>
-        ) : preview.length === 0 ? (
-          <p className="lk-og-empty">目前沒有公開開團</p>
-        ) : (
-          <div className="lk-og-rail" role="list">
-            {preview.map((g) => (
-              <div key={g.id} className="lk-og-rail-item" role="listitem">
-                <LookupGroupPosterCard group={g} pinned={pinnedIds.includes(g.id)} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="lk-og-cta-wrap">
-          <Link to={openGroupsListHref()} className="lk-og-cta">
-            <span className="lk-og-cta-label">
-              {moreCount > 0 ? `查看其他開團（還有 ${moreCount} 團）` : '前往開團專區'}
-            </span>
-            <ArrowRight className="lk-og-cta-icon" size={20} aria-hidden />
-          </Link>
-        </div>
+        <OpenGroupChannelPreview
+          title="通販"
+          channel="通販"
+          groups={mailGroups}
+          pinnedIds={pinnedIds}
+          loading={loading}
+        />
+        <OpenGroupChannelPreview
+          title="場販"
+          channel="場販"
+          groups={venueGroups}
+          pinnedIds={pinnedIds}
+          loading={loading}
+        />
       </section>
     </>
   )

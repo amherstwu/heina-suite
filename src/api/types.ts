@@ -50,6 +50,17 @@ export type PortalProcessStep = {
 }
 
 /** --- Group buy (V50) --- */
+export type PortalSocialIconKind = 'ig' | 'threads' | 'line' | 'custom'
+
+export type PortalSocialIconSlot = {
+  id: string
+  label: string
+  url: string
+  kind?: PortalSocialIconKind
+  /** 自訂圖示網址或 data URL */
+  iconUrl?: string
+}
+
 export type PortalConfig = {
   title: string
   intro: string
@@ -72,6 +83,8 @@ export type PortalConfig = {
   threadsUrl?: string
   preorderShopUrl?: string
   spotShopUrl?: string
+  /** 查詢頁左上角大頭貼（圖片網址或上傳圖） */
+  avatarUrl?: string
   /** JSON 字串或已解析陣列 */
   announcements?: PortalAnnouncement[] | string
   faqItems?: PortalFaqItem[] | string
@@ -80,6 +93,24 @@ export type PortalConfig = {
   homeOpenGroupIds?: string[]
   /** 代購流程圖（購物／規則／匯率）；缺省用內建圖 */
   guideInfographics?: PortalGuideInfographic[]
+  /** 官方 LINE 客服下方社群圖示（至少 3 格，後台可改網址／圖示） */
+  socialIconSlots?: PortalSocialIconSlot[]
+  /** 查詢頁教學圖卡（搜尋／討論串／聊天室／喊單） */
+  teachCards?: PortalTeachCard[]
+}
+
+export type PortalTeachCardId = 'search-tips' | 'thread-usage' | 'chat-reminders' | 'order-howto'
+
+export type PortalTeachImage = {
+  id: string
+  src: string
+  alt?: string
+}
+
+export type PortalTeachCard = {
+  id: PortalTeachCardId
+  title?: string
+  images?: PortalTeachImage[]
 }
 
 export type PortalGuideInfographic = {
@@ -119,6 +150,33 @@ export type GroupBuyPurchaseCost = {
   twdCost?: string | number
   logisticsId?: string
   weight?: string | number
+}
+
+/** 集運單上的一包入庫件（對應團務成本列的物流編號） */
+export type ConsolidationParcel = {
+  groupId: string
+  costRowId: string
+  logisticsId: string
+  /** 入庫重量（含外箱），僅供核對 */
+  inboundWeight: string
+  groupName?: string
+}
+
+/** 集運單：勾選入庫件合箱後的一批 */
+export type ConsolidationShipment = {
+  id: string
+  createdAt: number
+  updatedAt: number
+  /** consolidating＝已集運；arrived＝已抵台；ended＝相關團務已結束 */
+  status: 'consolidating' | 'arrived' | 'ended'
+  carrier: string
+  note: string
+  parcels: ConsolidationParcel[]
+  /** 集運商合箱後實重（計費重） */
+  billedWeightKg: string
+  intlFeeTwd: string
+  intlTrackingNo: string
+  arrivedAt?: string
 }
 
 /** 開團採購管道：場販／通販（舊資料「市場飯」視為場販） */
@@ -172,6 +230,10 @@ export type GroupBuyGroup = {
   imageUrls?: string[]
   /** 開團專區／團務小卡備註 */
   remarks?: string
+  /** 開團中心：缺貨待補 */
+  stockAlert?: boolean
+  /** 缺貨待補備註，例如缺哪一款、下次查看日 */
+  stockAlertNote?: string
   orders: GroupBuyOrder[]
 }
 
@@ -205,6 +267,8 @@ export type BankJournalRow = {
   amount: number
   category: string
   note: string
+  /** 匯款後五碼（顯示為 #xxxxx） */
+  lastFive?: string
 }
 
 export type GroupBuyAppData = {
@@ -217,18 +281,28 @@ export type GroupBuyAppData = {
   portalLookupCustomers?: PortalLookupCustomer[]
   /** 帳務備註（由客戶列表同步，供付款回報勾選） */
   customerBalanceMemos?: SharedCustomerBalanceMemo[]
+  /** 集運單（合箱批次） */
+  consolidationShipments?: ConsolidationShipment[]
   /** 銀行帳號安全查詢（getAppData 不含明文密碼） */
   bankViewer?: BankViewerPublicMeta
 }
 
 export type GroupBuySavePayload = {
   groups: GroupBuyGroup[]
-  bankJournal: BankJournalRow[]
+  /** 團務儲存會忽略此欄，避免日記帳與團務互相覆蓋 */
+  bankJournal?: BankJournalRow[]
   exchangeRate: number
   portalConfig: PortalConfig
   paymentReports?: CustomerPaymentReport[]
   portalLookupCustomers?: PortalLookupCustomer[]
   customerBalanceMemos?: SharedCustomerBalanceMemo[]
+  consolidationShipments?: ConsolidationShipment[]
+}
+
+export type SaveBankJournalPayload = {
+  bankJournal: BankJournalRow[]
+  /** replace：日記帳頁整份覆蓋；upsert：沖銷／確認只寫入該幾筆 */
+  mode?: 'replace' | 'upsert'
 }
 
 /** 顧客自助查單用：姓名／LINE 與 4 碼密碼 */
@@ -359,7 +433,7 @@ export type CustomerPaymentReport = {
   submittedAt: number
   confirmedAt?: number
   confirmedBank?: string
-  /** 確認時寫入的日記帳 ID，供返回待確認或刪除時沖銷 */
+  /** 確認時寫入的日記帳 ID（僅對照，刪除日記帳不會改團務） */
   journalEntryId?: string
   /** 客人自助回報 vs 付款審核主動沖銷 */
   source?: CustomerPaymentReportSource

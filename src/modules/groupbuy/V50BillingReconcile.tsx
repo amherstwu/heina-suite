@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { BankJournalRow, GroupBuyGroup } from '../../api/types'
 import {
   BillOrderRow,
   buildPaymentNotification,
+  calcItemsTotalTwd,
   calcOrderBalance,
   customerLivePending,
   formatRemittancePaymentInfo,
@@ -10,12 +12,11 @@ import {
   REMITTANCE_BANK_OPTIONS,
   sumLiveDeposits,
 } from './v50Utils'
+import { copyTextToClipboard } from '../../utils/copyText'
+import { createPaymentJournalRow, normalizeLastFive } from './journalLogic'
 import './groupbuy.css'
 import './v50GroupCard.css'
-
-function newId(prefix: string) {
-  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2, 6)}`
-}
+import './v50OrderEntryModal.css'
 
 export type V50BillConfirmPayload = {
   nextGroups: GroupBuyGroup[]
@@ -38,6 +39,7 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set())
   const [editingAmounts, setEditingAmounts] = useState<Record<string, number | string>>({})
   const [payNote, setPayNote] = useState('')
+  const [lastFive, setLastFive] = useState('')
   const [remittanceDate, setRemittanceDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [remittanceBank, setRemittanceBank] = useState<string>(REMITTANCE_BANK_OPTIONS[1])
 
@@ -74,15 +76,18 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
     setSelectedOrderIds(ids)
     setEditingAmounts(init)
     setPayNote('')
+    setLastFive('')
     setRemittanceDate(new Date().toISOString().slice(0, 10))
     setRemittanceBank(REMITTANCE_BANK_OPTIONS[1])
     setBillOpen(true)
   }
 
   async function confirmBill() {
-    const paymentInfo = formatRemittancePaymentInfo(remittanceDate, remittanceBank, payNote)
+    const five = normalizeLastFive(lastFive) || normalizeLastFive(payNote)
+    const paymentInfo = formatRemittancePaymentInfo(remittanceDate, remittanceBank, five || payNote)
     const totalIn = billLiveTotal
     const targetIds = [...selectedOrderIds]
+    const selectedOrders = billOrders.filter((o) => selectedOrderIds.has(o.id))
     const nextGroups = groups.map((g) => ({
       ...g,
       orders: g.orders.map((o) => {
@@ -97,14 +102,16 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
         }
       }),
     }))
-    const journalRow: BankJournalRow = {
-      id: newId('j'),
+    const journalRow: BankJournalRow = createPaymentJournalRow({
       date: remittanceDate,
-      bank: remittanceBank || '待分類',
-      type: '收入',
       amount: totalIn,
-      category: '團購訂金',
-      note: `${billCustomer} 沖銷 ${targetIds.length} 筆${payNote.trim() ? ` · ${payNote.trim()}` : ''}`,
+      customerName: billCustomer,
+      groupNames: selectedOrders.map((o) => o.groupName),
+      lastFive: five,
+      bank: remittanceBank || '待分類',
+    })
+    if (payNote.trim() && !normalizeLastFive(payNote)) {
+      journalRow.note = `${journalRow.note} ${payNote.trim()}`.trim()
     }
     setBillOpen(false)
     await onConfirmBill({
@@ -122,12 +129,8 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
     amounts: Record<string, number | string>,
   ) {
     const text = buildPaymentNotification(name, orders, selectedIds, amounts)
-    try {
-      await navigator.clipboard.writeText(text)
-      onNotify?.('已複製匯款通知')
-    } catch {
-      onNotify?.('複製失敗')
-    }
+    const ok = await copyTextToClipboard(text)
+    onNotify?.(ok ? '已複製匯款通知' : '複製失敗')
   }
 
   function noticeStateForCustomer(name: string, orders: BillOrderRow[]) {
@@ -202,7 +205,8 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
       </div>
       )}
 
-      {billOpen ? (
+      {billOpen
+        ? createPortal(
         <div className="v50-order-backdrop" onClick={() => setBillOpen(false)}>
           <div className="v50-order-card v50-bill-card" onClick={(e) => e.stopPropagation()}>
             <div className="v50-order-head">
@@ -235,6 +239,7 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
                     </li>
                   ))}
                 </ul>
+                <p className="v50-bill-items-total">總金額 ${calcItemsTotalTwd(o.items || []).toLocaleString()}</p>
                 <label className="v50-order-field">
                   <span className="v50-order-label">實際沖銷訂金（實收金額）</span>
                   <input
@@ -277,9 +282,20 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
                 </select>
               </label>
             </div>
+            <label className="v50-order-field mt-2">
+              <span className="v50-order-label">後五碼</span>
+              <input
+                className="v50-order-input"
+                inputMode="numeric"
+                maxLength={8}
+                placeholder="#xxxxx"
+                value={lastFive}
+                onChange={(e) => setLastFive(e.target.value)}
+              />
+            </label>
             <input
               className="v50-order-input mt-2"
-              placeholder="匯款備註（選填，會顯示為 #備註）"
+              placeholder="匯款備註（選填）"
               value={payNote}
               onChange={(e) => setPayNote(e.target.value)}
             />
@@ -292,8 +308,10 @@ export function V50BillingReconcile({ groups, onConfirmBill, onNotify, emptyText
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+            document.body,
+          )
+        : null}
     </>
   )
 }

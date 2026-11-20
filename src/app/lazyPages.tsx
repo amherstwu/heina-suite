@@ -99,6 +99,12 @@ export const LazyPreorderPage = lazy(() =>
 export const LazyGroupBuyPreorderHubPage = lazy(() =>
   import('../pages/GroupBuyPreorderHubPage').then((m) => ({ default: m.GroupBuyPreorderHubPage })),
 )
+export const LazyConsolidationPage = lazy(() =>
+  import('../pages/ConsolidationPage').then((m) => ({ default: m.ConsolidationPage })),
+)
+export const LazyInboundMonthPage = lazy(() =>
+  import('../pages/InboundMonthPage').then((m) => ({ default: m.InboundMonthPage })),
+)
 export const LazyAdminLoginPage = lazy(() =>
   import('../pages/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })),
 )
@@ -113,6 +119,9 @@ export const LazyPaymentReviewPage = lazy(() =>
 )
 export const LazyPaymentReportPage = lazy(() =>
   import('../pages/PaymentReportPage').then((m) => ({ default: m.PaymentReportPage })),
+)
+export const LazyJournalPage = lazy(() =>
+  import('../pages/JournalPage').then((m) => ({ default: m.JournalPage })),
 )
 export const LazyPublicShell = lazy(() =>
   import('../pages/storefront/PublicShell').then((m) => ({ default: m.PublicShell })),

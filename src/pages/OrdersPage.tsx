@@ -20,6 +20,7 @@ import { extractV50OrderIdFromDaigou } from '../modules/groupbuy/v50OrderLookup'
 import { isV50CodSyncedOrder } from '../daigou/commercialDashboard'
 import { dueDepositAmount } from './staffLookup/previewUtils'
 import { useDaigouStore } from '../daigou/store'
+import { CustomerNoteField } from '../components/customers/CustomerNoteField'
 import { ORDER_STATUS_LABEL, PAYMENT_STATUS_LABEL } from '../daigou/constants'
 import type { OrderItem, Order, OrderStatus, PaymentStatus, Customer } from '../daigou/types'
 import { downloadCsv } from '../daigou/csv'
@@ -124,6 +125,7 @@ export function OrdersPage() {
   const products = useDaigouStore((s) => s.products)
   const shipments = useDaigouStore((s) => s.shipments)
   const addOrder = useDaigouStore((s) => s.addOrder)
+  const updateCustomer = useDaigouStore((s) => s.updateCustomer)
   const addToast = useDaigouStore((s) => s.addToast)
   const [q, setQ] = useState(queryFromUrl || customerFromUrl)
   const [customerFilter, setCustomerFilter] = useState(customerFromUrl)
@@ -384,7 +386,6 @@ export function OrdersPage() {
     <div className="orders-page">
       <PageHeader
         title="客單管理"
-        subtitle="依客人統整訂單；待付款、已處理與已結束分類，與團務及出貨物流連動"
         action={
           <>
             <Btn variant="secondary" onClick={exportCsv}>
@@ -503,6 +504,7 @@ export function OrdersPage() {
             const groupNames = groupSections
               .map((s) => (s.groupStatus ? `${s.groupName}（${s.groupStatus}）` : s.groupName))
               .join('、')
+            const cardCustomer = customersById.get(group.orders[0]?.customerId ?? '')
 
             return (
             <Card key={group.name} className="order-customer-card" hover={false}>
@@ -528,6 +530,15 @@ export function OrdersPage() {
                 </div>
                 <Chip tone="neutral" className="order-card-chip">{group.orders.length} 筆訂單</Chip>
               </div>
+              {expanded && cardCustomer ? (
+                <div className="order-customer-note" onClick={(e) => e.stopPropagation()}>
+                  <CustomerNoteField
+                    compact
+                    value={cardCustomer.customerNote}
+                    onSave={(next) => updateCustomer(cardCustomer.id, { customerNote: next })}
+                  />
+                </div>
+              ) : null}
               {expanded
                 ? groupSections.map((section) => (
                     <div key={section.groupId} className="order-group-section">

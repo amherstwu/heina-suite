@@ -1,5 +1,3 @@
 @echo off
-setlocal EnableExtensions
-chcp 65001 >nul
-cd /d "%~dp0"
-call "%~dp0open-local-preview.bat"
+rem 開啟桌面啟動選單
+call "%~dp0desktop\launcher-menu.cmd"

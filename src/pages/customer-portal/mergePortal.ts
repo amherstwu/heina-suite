@@ -5,6 +5,8 @@ import type {
   PortalGuideInfographic,
   PortalProcessStep,
 } from '../../api/types'
+import { parseSocialIconSlots } from './portalSocialIcons'
+import { parseTeachCards } from './portalTeachCards'
 import {
   HEINA_COMMUNITY_LINE_URL,
   HEINA_INSTAGRAM_URL,
@@ -80,11 +82,14 @@ export function normalizePortal(raw: unknown): PortalConfig {
     threadsUrl: o.threadsUrl != null ? String(o.threadsUrl) : undefined,
     preorderShopUrl: o.preorderShopUrl != null ? String(o.preorderShopUrl) : undefined,
     spotShopUrl: o.spotShopUrl != null ? String(o.spotShopUrl) : undefined,
+    avatarUrl: String(o.avatarUrl || '').trim() || undefined,
     announcements: announcements ?? (o.announcements as PortalConfig['announcements']),
     faqItems: faqItems ?? (o.faqItems as PortalConfig['faqItems']),
     processSteps: processSteps ?? (o.processSteps as PortalConfig['processSteps']),
     homeOpenGroupIds: homeOpenGroupIds.length ? homeOpenGroupIds : undefined,
     guideInfographics: guideInfographics?.length ? guideInfographics : undefined,
+    socialIconSlots: parseSocialIconSlots(o.socialIconSlots),
+    teachCards: parseTeachCards(o.teachCards),
   }
   if (!String(merged.lineFriendUrl || '').trim()) merged.lineFriendUrl = HEINA_OFFICIAL_LINE_URL
   if (!String(merged.serviceUrl || '').trim()) merged.serviceUrl = HEINA_OFFICIAL_LINE_URL

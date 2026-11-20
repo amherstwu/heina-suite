@@ -147,7 +147,12 @@ export function buildOrderFlatRows(groups: GroupBuyGroup[]): (string | number)[]
 export function buildJournalRows(journal: BankJournalRow[]): (string | number)[][] {
   const rows: (string | number)[][] = [Array.from(GB_JOURNAL_HEADER)]
   for (const j of journal || []) {
-    rows.push([j.id || '', j.date || '', j.bank || '', j.type || '', num(j.amount), j.category || '', j.note || ''])
+    const five = String(j.lastFive || '').replace(/\D/g, '').slice(-5)
+    let note = String(j.note || '').trim()
+    if (five && !note.includes(`#${five}`) && !note.includes(`後五碼 ${five}`)) {
+      note = note ? `${note} #${five}` : `#${five}`
+    }
+    rows.push([j.id || '', j.date || '', j.bank || '', j.type || '', num(j.amount), j.category || '', note])
   }
   return rows
 }
@@ -191,15 +196,21 @@ export function buildSettingsRowsFromAppData(
     ['portalPreorderShopUrl', String(pc.preorderShopUrl || '')],
     ['portalSpotShopUrl', String(pc.spotShopUrl || '')],
     ['portalFooter', String(pc.footer || '')],
+    ['portalAvatarUrl', String(pc.avatarUrl || '')],
   ]
   if (pc.announcements) kv.push(['portalAnnouncementsJson', JSON.stringify(pc.announcements)])
   if (pc.faqItems) kv.push(['portalFaqJson', JSON.stringify(pc.faqItems)])
   if (pc.processSteps) kv.push(['portalProcessStepsJson', JSON.stringify(pc.processSteps)])
   if (pc.guideInfographics) kv.push(['portalGuideInfographicsJson', JSON.stringify(pc.guideInfographics)])
   if (pc.homeOpenGroupIds) kv.push(['portalHomeOpenGroupIdsJson', JSON.stringify(pc.homeOpenGroupIds)])
+  if (pc.socialIconSlots) kv.push(['portalSocialIconSlotsJson', JSON.stringify(pc.socialIconSlots)])
+  if (pc.teachCards) kv.push(['portalTeachCardsJson', JSON.stringify(pc.teachCards)])
   if (data.paymentReports) kv.push(['paymentReportsJson', JSON.stringify(data.paymentReports)])
   if (data.portalLookupCustomers) kv.push(['portalLookupCustomersJson', JSON.stringify(data.portalLookupCustomers)])
   if (data.customerBalanceMemos) kv.push(['customerBalanceMemosJson', JSON.stringify(data.customerBalanceMemos)])
+  if (data.consolidationShipments) {
+    kv.push(['consolidationShipmentsJson', JSON.stringify(data.consolidationShipments)])
+  }
 
   const seen = new Set<string>()
   for (const [k, v] of kv) {
@@ -308,15 +319,20 @@ export function groupsFromOrderFlatRows(orderRows: (string | number)[][]): Group
 }
 
 export function journalFromRows(journalRows: (string | number)[][]): BankJournalRow[] {
-  return stripHeader(journalRows).map((r, i) => ({
-    id: String(r[0] || `bj_${i}`),
-    date: String(r[1] || ''),
-    bank: String(r[2] || ''),
-    type: String(r[3] || ''),
-    amount: num(r[4]),
-    category: String(r[5] || ''),
-    note: String(r[6] || ''),
-  }))
+  return stripHeader(journalRows).map((r, i) => {
+    const note = String(r[6] || '')
+    const hash = note.match(/#(\d{5})/) || note.match(/後五碼\s*(\d{5})/)
+    return {
+      id: String(r[0] || `bj_${i}`),
+      date: String(r[1] || ''),
+      bank: String(r[2] || ''),
+      type: String(r[3] || ''),
+      amount: num(r[4]),
+      category: String(r[5] || ''),
+      note,
+      lastFive: hash?.[1] || '',
+    }
+  })
 }
 
 export function settingsKvFromRows(settingsRows: (string | number)[][]): Record<string, string> {
@@ -363,6 +379,7 @@ export function applySettingsKvToAppData(data: GroupBuyAppData, kv: Record<strin
   set('preorderShopUrl', 'portalPreorderShopUrl')
   set('spotShopUrl', 'portalSpotShopUrl')
   set('footer', 'portalFooter')
+  set('avatarUrl', 'portalAvatarUrl')
   if (kv.portalAnnouncementsJson) pc.announcements = parseJsonSafe(kv.portalAnnouncementsJson, pc.announcements)
   if (kv.portalFaqJson) pc.faqItems = parseJsonSafe(kv.portalFaqJson, pc.faqItems)
   if (kv.portalProcessStepsJson) pc.processSteps = parseJsonSafe(kv.portalProcessStepsJson, pc.processSteps)
@@ -372,12 +389,21 @@ export function applySettingsKvToAppData(data: GroupBuyAppData, kv: Record<strin
   if (kv.portalHomeOpenGroupIdsJson) {
     pc.homeOpenGroupIds = parseJsonSafe(kv.portalHomeOpenGroupIdsJson, pc.homeOpenGroupIds)
   }
+  if (kv.portalSocialIconSlotsJson) {
+    pc.socialIconSlots = parseJsonSafe(kv.portalSocialIconSlotsJson, pc.socialIconSlots)
+  }
+  if (kv.portalTeachCardsJson) {
+    pc.teachCards = parseJsonSafe(kv.portalTeachCardsJson, pc.teachCards)
+  }
   if (kv.paymentReportsJson) next.paymentReports = parseJsonSafe(kv.paymentReportsJson, next.paymentReports)
   if (kv.portalLookupCustomersJson) {
     next.portalLookupCustomers = parseJsonSafe(kv.portalLookupCustomersJson, next.portalLookupCustomers)
   }
   if (kv.customerBalanceMemosJson) {
     next.customerBalanceMemos = parseJsonSafe(kv.customerBalanceMemosJson, next.customerBalanceMemos)
+  }
+  if (kv.consolidationShipmentsJson) {
+    next.consolidationShipments = parseJsonSafe(kv.consolidationShipmentsJson, next.consolidationShipments)
   }
   return next
 }

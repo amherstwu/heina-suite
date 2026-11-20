@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <title>動漫情報系統 · 本機預覽</title>
+    <!-- heina-preview-hub v1 -->
+    <style>
+      :root {
+        --bg: #f6efe8;
+        --card: #fffaf6;
+        --ink: #3d2a35;
+        --muted: #7a6672;
+        --line: rgba(61, 42, 53, 0.12);
+        --violet: #7c5cff;
+        --rose: #e86b8a;
+        --sky: #4f9fd4;
+        --mint: #3aaf8c;
+        --amber: #d4922a;
+        --shadow: 0 18px 48px rgba(61, 42, 53, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 600px at 10% -10%, rgba(124, 92, 255, 0.14), transparent 55%),
+          radial-gradient(900px 500px at 100% 0%, rgba(232, 107, 138, 0.12), transparent 50%),
+          var(--bg);
+      }
+
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2.5rem;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        font-weight: 900;
+        letter-spacing: -0.02em;
+      }
+
+      .meta {
+        margin: 0.45rem 0 0;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.65);
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .badge-dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: var(--mint);
+        box-shadow: 0 0 0 3px rgba(58, 175, 140, 0.22);
+      }
+
+      section {
+        margin-bottom: 1.25rem;
+      }
+
+      .section-title {
+        margin: 0 0 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-height: 5.5rem;
+        padding: 0.95rem 1rem;
+        border-radius: 1rem;
+        border: 1px solid var(--line);
+        background: var(--card);
+        box-shadow: var(--shadow);
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(124, 92, 255, 0.35);
+        box-shadow: 0 22px 56px rgba(61, 42, 53, 0.16);
+      }
+
+      .card:focus-visible {
+        outline: 3px solid rgba(124, 92, 255, 0.45);
+        outline-offset: 2px;
+      }
+
+      .card-label {
+        font-size: 0.95rem;
+        font-weight: 900;
+      }
+
+      .card-hint {
+        font-size: 0.72rem;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .card--violet {
+        border-top: 3px solid var(--violet);
+      }
+      .card--rose {
+        border-top: 3px solid var(--rose);
+      }
+      .card--sky {
+        border-top: 3px solid var(--sky);
+      }
+      .card--mint {
+        border-top: 3px solid var(--mint);
+      }
+      .card--amber {
+        border-top: 3px solid var(--amber);
+      }
+
+      footer {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px dashed var(--line);
+        font-size: 0.75rem;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      footer code {
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.35rem;
+        background: rgba(255, 255, 255, 0.75);
+        font-size: 0.72rem;
+      }
+
+      .rebuild-hint {
+        margin: 0 0 1.25rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 0.85rem;
+        border: 1px dashed var(--line);
+        background: rgba(255, 255, 255, 0.55);
+        font-size: 0.78rem;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+
+      .rebuild-hint strong {
+        color: var(--ink);
+      }
+
+      @media (max-width: 480px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <p class="eyebrow">Heina Suite · Local Preview</p>
+          <h1>本機預覽</h1>
+          <p class="meta" id="build-meta">與貼上 Apps Script 相同的前端 bundle</p>
+        </div>
+        <div class="badge" aria-live="polite">
+          <span class="badge-dot" aria-hidden="true"></span>
+          <span id="server-status">預覽伺服器運作中</span>
+        </div>
+      </header>
+
+      <p class="rebuild-hint">
+        <strong>統一本機預覽：</strong>請固定從此頁進入各功能。改完程式後請再執行桌面「<strong>01 本機預覽</strong>」重建 bundle；
+        在各頁按 <strong>F5</strong> 可重新整理當前畫面。
+      </p>
+
+      <section>
+        <h2 class="section-title">顧客端</h2>
+        <div class="grid">
+          <a class="card card--rose" href="/#/lookup">
+            <span class="card-label">訂單查詢</span>
+            <span class="card-hint">顧客專區主入口</span>
+          </a>
+          <a class="card card--sky" href="/#/portal">
+            <span class="card-label">簡易查單</span>
+            <span class="card-hint">#/portal</span>
+          </a>
+          <a class="card card--mint" href="/#/open-groups">
+            <span class="card-label">開團專區</span>
+            <span class="card-hint">客人瀏覽版</span>
+          </a>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="section-title">後台</h2>
+        <div class="grid">
+          <a class="card card--violet" href="/#/login">
+            <span class="card-label">後台登入</span>
+            <span class="card-hint">HelpMeBuy Pro</span>
+          </a>
+          <a class="card card--violet" href="/#/dashboard">
+            <span class="card-label">營運總覽</span>
+            <span class="card-hint">#/dashboard</span>
+          </a>
+          <a class="card card--amber" href="/#/group-buy-center">
+            <span class="card-label">開團中心</span>
+            <span class="card-hint">通販團務</span>
+          </a>
+          <a class="card card--amber" href="/#/open-groups-preview">
+            <span class="card-label">開團專區管理</span>
+            <span class="card-hint">後台編輯</span>
+          </a>
+        </div>
+      </section>
+
+      <footer>
+        預覽網址 <code id="preview-root">http://127.0.0.1:5280/preview/</code> · 停止預覽：關閉
+        <code>heina-suite-gas-preview</code> 視窗或執行「03 停止本機預覽」
+      </footer>
+    </div>
+
+    <script>
+      ;(function () {
+        var root = document.getElementById('preview-root')
+        if (root) root.textContent = location.origin + '/preview/'
+
+        fetch('/preview/hub-meta.json', { cache: 'no-store' })
+          .then(function (r) {
+            return r.ok ? r.json() : null
+          })
+          .then(function (meta) {
+            if (!meta || !meta.builtAt) return
+            var el = document.getElementById('build-meta')
+            if (!el) return
+            var d = new Date(meta.builtAt)
+            if (Number.isNaN(d.getTime())) return
+            el.textContent =
+              'Bundle 建置：' +
+              d.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              }) +
+              (meta.bundleSha ? ' · #' + meta.bundleSha : '')
+          })
+          .catch(function () {})
+      })()
+    </script>
+  </body>
+</html>

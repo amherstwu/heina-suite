@@ -474,6 +474,51 @@
   padding: 1rem;
 }
 
+.gb-hub-batch-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.gb-hub-batch-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  color: var(--hub-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gb-hub-batch-filter.is-active {
+  border-color: #c4b4e8;
+  background: #f3eefc;
+  color: #6b4ea8;
+}
+
+.gb-hub-batch-filter.is-empty {
+  opacity: 0.55;
+}
+
+.gb-hub-batch-filter-count {
+  min-width: 1.15rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(107, 78, 168, 0.1);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6875rem;
+  text-align: center;
+}
+
+.gb-hub-batch-filter.is-active .gb-hub-batch-filter-count {
+  background: rgba(107, 78, 168, 0.18);
+}
+
 .gb-hub-batch-controls {
   display: flex;
   flex-wrap: wrap;
@@ -494,6 +539,11 @@
   color: var(--hub-violet);
   cursor: pointer;
   padding: 0;
+}
+
+.gb-hub-text-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .gb-hub-batch-select {
@@ -627,10 +677,66 @@
 }
 
 .gb-hub-note {
-  font-size: 0.6875rem;
-  color: var(--hub-soft);
-  line-height: 1.5;
   margin: 0;
+  font-size: 0.75rem;
+  color: var(--hub-muted);
+  line-height: 1.45;
+}
+
+.gb-hub-stock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.gb-hub-stock-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.gb-hub-stock-add select {
+  flex: 1 1 12rem;
+  min-height: 2.1rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  color: var(--hub-ink);
+  font-size: 0.82rem;
+}
+
+.gb-hub-stock-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gb-hub-stock-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem 0.6rem;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--hub-border);
+}
+
+.gb-hub-stock-row .gb-hub-check-row {
+  padding: 0;
+  border-bottom: none;
+}
+
+.gb-hub-stock-note {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  color: var(--hub-ink);
+  font-size: 0.82rem;
 }
 
 .gb-hub-pay-export-range {

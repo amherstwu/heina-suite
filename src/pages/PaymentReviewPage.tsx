@@ -62,8 +62,20 @@ export function PaymentReviewPage() {
           paymentReports: nextPaymentReports,
         }
         await api.call({ module: 'groupbuy', action: 'saveAppData', payload })
+        if (nextJournal !== bankJournal) {
+          const added = nextJournal.filter((j) => !bankJournal.some((x) => x.id === j.id))
+          if (added.length) {
+            const saved = await api.call<{ bankJournal?: GroupBuyAppData['bankJournal'] }>({
+              module: 'groupbuy',
+              action: 'saveBankJournal',
+              payload: { bankJournal: added, mode: 'upsert' },
+            })
+            setBankJournal(saved?.bankJournal || nextJournal)
+          } else {
+            setBankJournal(nextJournal)
+          }
+        }
         setGroups(nextGroups)
-        setBankJournal(nextJournal)
         setPaymentReports(nextPaymentReports)
         setStatusMsg('已儲存')
       } catch (e) {
@@ -80,21 +92,16 @@ export function PaymentReviewPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="payment-review-page space-y-6">
       {statusMsg ? <div className="gb-toast">{statusMsg}</div> : null}
 
       <PageHeader
         title="付款審核"
         action={
-          <>
-            <Btn variant="secondary" onClick={() => void load()}>
-              <RefreshCw className="h-4 w-4" />
-              重新載入
-            </Btn>
-            <Btn variant="secondary" to="/groups">
-              前往團務管理
-            </Btn>
-          </>
+          <Btn variant="secondary" className="payment-review-reload-btn" onClick={() => void load()}>
+            <RefreshCw className="h-4 w-4" />
+            重新載入
+          </Btn>
         }
       />
 
@@ -104,10 +111,7 @@ export function PaymentReviewPage() {
         onNotify={setStatusMsg}
         onConfirmBill={async ({ nextGroups, journalRow, targetOrderIds, customerName }) => {
           const nextJournal = [journalRow, ...bankJournal]
-          const note = journalRow.note || ''
-          const lastFiveMatch = note.match(/後五碼\s*(\d{5})/)
-          const payNoteMatch = note.match(/·\s*(.+)$/)
-          const lastFive = lastFiveMatch?.[1] || (payNoteMatch?.[1]?.replace(/^#/, '').trim() || '—')
+          const lastFive = journalRow.lastFive || '—'
           const adminReport = createAdminReviewPaymentReport(nextGroups, {
             customerName,
             orderIds: targetOrderIds,

@@ -2,12 +2,6 @@ import { useCallback, useEffect, useState, type MouseEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useApi } from '../context/useApi'
-import {
-  HEINA_COMMUNITY_LINE_URL,
-  HEINA_INSTAGRAM_URL,
-  HEINA_OFFICIAL_LINE_URL,
-  HEINA_THREADS_URL,
-} from '../daigou/heinaPublicCopy'
 import './customer-lookup.css'
 import { CustomerLookupExperience } from './customer-portal/CustomerLookupExperience'
 import { CustomerLookupSiteSections } from './customer-portal/CustomerLookupSiteSections'
@@ -19,9 +13,9 @@ const BRAND_SYSTEM = '訂單自助查詢'
 
 const NAV = [
   { href: '#order-search', label: '訂單查詢' },
-  { href: '#news', label: '最新公告' },
   { href: '#closing-soon', label: '即將結單' },
   { href: '#open-groups', label: '開團專區' },
+  { href: '#news', label: '最新公告' },
   { href: '#guide', label: '代購流程' },
   { href: '#faq', label: '常見問題' },
   { href: '#contact', label: '聯絡客服' },
@@ -33,10 +27,6 @@ export function CustomerLookupPage() {
   const searchState = useCustomerPortalSearch(api)
   const { portal } = searchState
   const [menuOpen, setMenuOpen] = useState(false)
-
-  const heroIntro =
-    portal.intro?.trim() ||
-    '輸入社群暱稱或訂單編號，即可查看付款與出貨狀態。'
 
   const hasResults =
     searchState.searched && !searchState.loading && searchState.totalMatches > 0
@@ -58,10 +48,6 @@ export function CustomerLookupPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [menuOpen])
 
-  const scrollToSearch = useCallback(() => {
-    document.getElementById('order-search')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
-
   const resetToHome = searchState.resetToHome
   const goHome = useCallback(() => {
     resetToHome()
@@ -80,13 +66,6 @@ export function CustomerLookupPage() {
     [goHome, showingResultsPane],
   )
 
-  const footerLinks = [
-    { href: portal.lineFriendUrl?.trim() || HEINA_OFFICIAL_LINE_URL, label: 'LINE 客服' },
-    { href: portal.threadsUrl?.trim() || HEINA_THREADS_URL, label: 'Threads' },
-    { href: portal.instagramUrl?.trim() || HEINA_INSTAGRAM_URL, label: 'IG' },
-    { href: portal.groupUrl?.trim() || HEINA_COMMUNITY_LINE_URL, label: '社群' },
-  ]
-
   return (
     <div className="lk">
       <header className="lk-site-header">
@@ -101,7 +80,9 @@ export function CustomerLookupPage() {
               else window.scrollTo({ top: 0, behavior: 'smooth' })
             }}
           >
-            <span className="lk-brand-mark" aria-hidden>H</span>
+            <span className="lk-brand-mark" aria-hidden>
+              {portal.avatarUrl?.trim() ? <img src={portal.avatarUrl.trim()} alt="" /> : 'H'}
+            </span>
             <span className="lk-site-brand-text">
               <span className="lk-brand-name">
                 <span className="lk-brand-heina">{BRAND_HEINA}</span>
@@ -165,11 +146,11 @@ export function CustomerLookupPage() {
 
       <section className="lk-hero lk-hero--journal" id="top">
         <div className="lk-hero-inner">
-          <h1 className="lk-hero-title">{PAGE_TITLE}</h1>
-          <p className="lk-hero-lead">{heroIntro}</p>
-          <button type="button" className="lk-hero-cta" onClick={scrollToSearch}>
-            查詢我的訂單
-          </button>
+          <h1 className="lk-hero-title">
+            <span className="lk-spark" aria-hidden />
+            {PAGE_TITLE}
+            <span className="lk-spark" aria-hidden />
+          </h1>
         </div>
       </section>
 
@@ -204,15 +185,6 @@ export function CustomerLookupPage() {
           <div className="lk-site-footer-brand">
             <p className="lk-footer-brand-name">{PAGE_TITLE}</p>
           </div>
-          {footerLinks.length > 0 ? (
-            <nav className="lk-footer-nav" aria-label="聯絡與連結">
-              {footerLinks.map((l) => (
-                <a key={l.label} className="lk-footer-link" href={l.href} target="_blank" rel="noreferrer">
-                  {l.label}
-                </a>
-              ))}
-            </nav>
-          ) : null}
           <div className="lk-site-footer-meta">
             {portal.footer?.trim() ? <p className="lk-footer-text">{portal.footer.trim()}</p> : null}
             <Link to="/login" className="lk-footer-admin">

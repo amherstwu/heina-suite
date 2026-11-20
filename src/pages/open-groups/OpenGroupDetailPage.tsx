@@ -7,9 +7,10 @@ import { hasRemoteGas } from '../../config/gasEndpoint'
 import { GroupImageGalleryEditor } from '../../components/groups/GroupImageGalleryEditor'
 import { useApi } from '../../context/useApi'
 import { useDaigouStore } from '../../daigou/store'
-import { isMailOrderChannel, isOpsActive } from '../../modules/groupbuy/groupLifecycle'
+import { isInGroupOps, isMailOrderChannel, isOpsActive } from '../../modules/groupbuy/groupLifecycle'
 import { V50_GROUP_STATUSES, normalizeGroupStatus } from '../../modules/groupbuy/v50Utils'
 import { normalizeGroupImageUrls, primaryGroupImageUrl } from './openGroupImages'
+import { groupOpsHref } from './openGroupsUtils'
 import { GroupImageSwipe } from './GroupImageSwipe'
 import './open-groups.css'
 
@@ -229,7 +230,6 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
   })()
 
   const adminListHref = '/open-groups-preview'
-  const savedOk = saveMsg.startsWith('已儲存')
 
   function goBack() {
     if (fromLookup) {
@@ -251,13 +251,12 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
             <p className="og-eyebrow">Heina Shop · 開團專區</p>
             <h1 className="og-title">{group?.name || '開團詳情'}</h1>
           </div>
-          {!embedded ? (
-            <Link
-              to={fromLookup ? lookupReturnHref : canEdit ? adminListHref : '/open-groups'}
-              className={'og-header-link' + (canEdit ? ' og-header-link--solid' : '')}
-            >
-              {fromLookup ? '返回查單' : canEdit ? '返回開團專區' : '回列表'}
-            </Link>
+          {canEdit && group && isInGroupOps(group) ? (
+            <div className="og-header-actions">
+              <Link to={groupOpsHref(group.id)} className="og-header-link og-header-link--solid">
+                團務管理
+              </Link>
+            </div>
           ) : null}
         </div>
       </header>
@@ -268,8 +267,8 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
           className={'og-detail-back' + (canEdit ? ' og-detail-back--admin' : '')}
           onClick={goBack}
         >
-          <ArrowLeft size={canEdit ? 18 : 16} aria-hidden />
-          {canEdit ? '返回開團專區' : '返回'}
+          <ArrowLeft size={canEdit ? 14 : 16} aria-hidden />
+          {canEdit ? '返回開團專區' : fromLookup ? '返回查單' : '返回'}
         </button>
 
         {loading ? <p className="og-state">載入中…</p> : null}
@@ -317,20 +316,7 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
 
               {!editing ? (
                 <>
-                  <section className="og-detail-section">
-                    <h3 className="og-detail-label">團務說明</h3>
-                    {group.description ? (
-                      <p className="og-detail-desc">{group.description}</p>
-                    ) : (
-                      <p className="og-detail-muted">尚無說明</p>
-                    )}
-                  </section>
-
                   <dl className="og-detail-meta">
-                    <div>
-                      <dt>採購管道</dt>
-                      <dd>{dash(group.channel)}</dd>
-                    </div>
                     <div>
                       <dt>結單日期</dt>
                       <dd>{dash(group.closingDate)}</dd>
@@ -345,6 +331,15 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
                     </div>
                   </dl>
 
+                  <section className="og-detail-section">
+                    <h3 className="og-detail-label">團務說明</h3>
+                    {group.description ? (
+                      <p className="og-detail-desc">{group.description}</p>
+                    ) : (
+                      <p className="og-detail-muted">尚無說明</p>
+                    )}
+                  </section>
+
                   {group.remarks ? (
                     <section className="og-detail-section">
                       <h3 className="og-detail-label">備註</h3>
@@ -354,12 +349,6 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
 
                   {canEdit ? (
                     <div className="og-detail-admin-bar">
-                      {savedOk ? (
-                        <button type="button" className="og-detail-back-cta" onClick={goBack}>
-                          <ArrowLeft size={18} aria-hidden />
-                          返回開團專區
-                        </button>
-                      ) : null}
                       {mailOrder ? (
                         !formed ? (
                           <button
@@ -371,7 +360,7 @@ export function OpenGroupDetailPage({ embedded = false }: Props) {
                             {saving ? '處理中…' : '建立團務（成團）'}
                           </button>
                         ) : (
-                          <Link to={`/groups?group=${encodeURIComponent(group.id)}`} className="og-detail-edit-btn">
+                          <Link to={groupOpsHref(group.id)} className="og-detail-edit-btn">
                             前往團務管理
                           </Link>
                         )

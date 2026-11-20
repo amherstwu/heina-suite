@@ -132,6 +132,8 @@ function gb_setGroupPortalFields_(group) {
   else gb_upsertSetting_(sh, 'gb_opsActive_' + id, '1');
   if (group.portalListed === false) gb_upsertSetting_(sh, 'gb_portalListed_' + id, '0');
   else gb_upsertSetting_(sh, 'gb_portalListed_' + id, '1');
+  gb_upsertSetting_(sh, 'gb_stockAlert_' + id, group.stockAlert ? '1' : '0');
+  gb_upsertSetting_(sh, 'gb_stockAlertNote_' + id, String(group.stockAlertNote || ''));
   gb_writeGroupImages_(sh, id, imageUrls);
 }
 
@@ -201,6 +203,8 @@ function gb_attachGroupPortalFields_(group) {
   group.opsActive = opsRaw === '0' ? false : true;
   var listedRaw = String(gb_getGroupPortalField_(id, 'portalListed') || '').trim();
   group.portalListed = listedRaw === '0' ? false : true;
+  group.stockAlert = String(gb_getGroupPortalField_(id, 'stockAlert') || '').trim() === '1';
+  group.stockAlertNote = String(gb_getGroupPortalField_(id, 'stockAlertNote') || '');
   return group;
 }
 
@@ -350,7 +354,8 @@ function gb_buildPortalConfigFromSettings_(settings) {
     threadsUrl: String(settings.portalThreadsUrl || ''),
     preorderShopUrl: String(settings.portalPreorderShopUrl || ''),
     spotShopUrl: String(settings.portalSpotShopUrl || ''),
-    footer: String(settings.portalFooter || '')
+    footer: String(settings.portalFooter || ''),
+    avatarUrl: String(settings.portalAvatarUrl || '')
   };
   if (announcements) pc.announcements = announcements;
   if (faqItems) pc.faqItems = faqItems;
@@ -362,6 +367,14 @@ function gb_buildPortalConfigFromSettings_(settings) {
   var guideInfographics = gb_parseJsonArray_(settings.portalGuideInfographicsJson);
   if (guideInfographics && guideInfographics.length) {
     pc.guideInfographics = guideInfographics;
+  }
+  var socialIconSlots = gb_parseJsonArray_(settings.portalSocialIconSlotsJson);
+  if (socialIconSlots && socialIconSlots.length) {
+    pc.socialIconSlots = socialIconSlots;
+  }
+  var teachCards = gb_parseJsonArray_(settings.portalTeachCardsJson);
+  if (teachCards && teachCards.length) {
+    pc.teachCards = teachCards;
   }
   return pc;
 }
@@ -386,7 +399,9 @@ function gb_fetchAllData_() {
     ? journalSheet.getRange(2, 1, journalSheet.getLastRow(), 7).getValues()
     : [];
   var bankJournal = journalRows.map(function (r) {
-    return { id: r[0], date: r[1], bank: r[2], type: r[3], amount: r[4], category: r[5], note: r[6] };
+    var note = String(r[6] || '');
+    var m = note.match(/#(\d{5})/) || note.match(/後五碼\s*(\d{5})/);
+    return { id: r[0], date: r[1], bank: r[2], type: r[3], amount: r[4], category: r[5], note: note, lastFive: m ? m[1] : '' };
   });
 
   var settings = {};
@@ -409,6 +424,7 @@ function gb_fetchAllData_() {
     paymentReports: gb_readPaymentReports_(settings),
     portalLookupCustomers: gb_readPortalLookupCustomers_(settings),
     customerBalanceMemos: gb_readCustomerBalanceMemos_(settings),
+    consolidationShipments: gb_readConsolidationShipments_(settings),
     bankViewer: gb_bankViewerPublicMeta_(bankViewerCfg)
   };
 }
@@ -598,11 +614,70 @@ function gb_buildFlatRows_(groups) {
   return rows;
 }
 
+function gb_journalNoteWithFive_(j) {
+  var five = String(j.lastFive || '').replace(/\D/g, '');
+  if (five.length >= 5) five = five.slice(-5);
+  var note = String(j.note || '').trim();
+  if (five && note.indexOf('#' + five) < 0 && note.indexOf('後五碼 ' + five) < 0) {
+    note = note ? (note + ' #' + five) : ('#' + five);
+  }
+  return note;
+}
+
+function gb_writeJournalSheet_(bankJournal) {
+  gb_initSheets_();
+  var sheet = SpreadsheetApp.getActive().getSheetByName(GB_SHEET_JOURNAL);
+  var last = sheet.getLastRow();
+  if (last > 1) sheet.getRange(2, 1, last, 7).clearContent();
+  var list = bankJournal || [];
+  var jRows = [];
+  for (var i = 0; i < list.length; i++) {
+    var j = list[i];
+    jRows.push([j.id, j.date, j.bank, j.type, j.amount, j.category, gb_journalNoteWithFive_(j)]);
+  }
+  if (jRows.length > 0) {
+    sheet.getRange(2, 1, jRows.length, 7).setValues(jRows);
+  }
+}
+
+function gb_upsertJournalRows_(existing, incoming) {
+  var byId = {};
+  var i;
+  var row;
+  var id;
+  for (i = 0; i < (existing || []).length; i++) {
+    id = String(existing[i].id || '');
+    if (id) byId[id] = existing[i];
+  }
+  var fresh = [];
+  for (i = 0; i < (incoming || []).length; i++) {
+    row = incoming[i];
+    id = String(row.id || '');
+    if (!id) continue;
+    if (byId[id]) byId[id] = row;
+    else fresh.push(row);
+  }
+  var out = fresh.slice();
+  for (i = 0; i < (existing || []).length; i++) {
+    id = String(existing[i].id || '');
+    out.push(id && byId[id] ? byId[id] : existing[i]);
+  }
+  return out;
+}
+
+function gb_saveBankJournal_(pl) {
+  var all = gb_fetchAllData_();
+  var incoming = (pl && pl.bankJournal) || [];
+  var mode = pl && pl.mode ? String(pl.mode) : 'replace';
+  var next = mode === 'upsert' ? gb_upsertJournalRows_(all.bankJournal || [], incoming) : incoming;
+  gb_writeJournalSheet_(next);
+  return { status: 'success', bankJournal: next };
+}
+
 function gb_performSave_(payload) {
   gb_initSheets_();
   var ss = SpreadsheetApp.getActive();
   var orderSheet = ss.getSheetByName(GB_SHEET_ORDERS);
-  var journalSheet = ss.getSheetByName(GB_SHEET_JOURNAL);
   var settingsSheet = ss.getSheetByName(GB_SHEET_SETTINGS);
 
   var last = orderSheet.getLastRow();
@@ -613,15 +688,7 @@ function gb_performSave_(payload) {
     orderSheet.getRange(2, 1, 1 + rows.length, GB_COLS).setValues(rows);
   }
 
-  var jLast = journalSheet.getLastRow();
-  if (jLast > 1) journalSheet.getRange(2, 1, jLast, 7).clearContent();
-  var bankJournal = payload.bankJournal || [];
-  var jRows = bankJournal.map(function (j) {
-    return [j.id, j.date, j.bank, j.type, j.amount, j.category, j.note];
-  });
-  if (jRows.length > 0) {
-    journalSheet.getRange(2, 1, 1 + jRows.length, 7).setValues(jRows);
-  }
+  // 日記帳與團務分開寫入，避免 saveAppData 覆蓋銀行日記帳
 
   if (payload.exchangeRate != null) {
     gb_upsertSetting_(settingsSheet, 'exchangeRate', String(payload.exchangeRate));
@@ -641,6 +708,7 @@ function gb_performSave_(payload) {
     if (pc.preorderShopUrl != null) gb_upsertSetting_(settingsSheet, 'portalPreorderShopUrl', pc.preorderShopUrl || '');
     if (pc.spotShopUrl != null) gb_upsertSetting_(settingsSheet, 'portalSpotShopUrl', pc.spotShopUrl || '');
     if (pc.footer != null) gb_upsertSetting_(settingsSheet, 'portalFooter', pc.footer || '');
+    if (pc.avatarUrl != null) gb_upsertSetting_(settingsSheet, 'portalAvatarUrl', pc.avatarUrl || '');
     if (pc.announcements != null) gb_upsertSetting_(settingsSheet, 'portalAnnouncementsJson', JSON.stringify(pc.announcements));
     if (pc.faqItems != null) gb_upsertSetting_(settingsSheet, 'portalFaqJson', JSON.stringify(pc.faqItems));
     if (pc.processSteps != null) gb_upsertSetting_(settingsSheet, 'portalProcessStepsJson', JSON.stringify(pc.processSteps));
@@ -651,6 +719,12 @@ function gb_performSave_(payload) {
       var ids = (pc.homeOpenGroupIds || []).map(function (x) { return String(x || ''); }).filter(Boolean).slice(0, 3);
       gb_upsertSetting_(settingsSheet, 'portalHomeOpenGroupIdsJson', JSON.stringify(ids));
     }
+    if (pc.socialIconSlots != null) {
+      gb_upsertSetting_(settingsSheet, 'portalSocialIconSlotsJson', JSON.stringify(pc.socialIconSlots));
+    }
+    if (pc.teachCards != null) {
+      gb_upsertSetting_(settingsSheet, 'portalTeachCardsJson', JSON.stringify(pc.teachCards));
+    }
   }
   if (payload.paymentReports) {
     gb_writePaymentReports_(settingsSheet, payload.paymentReports);
@@ -660,6 +734,9 @@ function gb_performSave_(payload) {
   }
   if (payload.customerBalanceMemos) {
     gb_writeCustomerBalanceMemos_(settingsSheet, payload.customerBalanceMemos);
+  }
+  if (payload.consolidationShipments) {
+    gb_writeConsolidationShipments_(settingsSheet, payload.consolidationShipments);
   }
   return { status: 'success' };
 }
@@ -723,6 +800,21 @@ function gb_readCustomerBalanceMemos_(settings) {
 
 function gb_writeCustomerBalanceMemos_(sheet, list) {
   gb_upsertSetting_(sheet, 'customerBalanceMemosJson', JSON.stringify(list || []));
+}
+
+function gb_readConsolidationShipments_(settings) {
+  try {
+    var raw = settings.consolidationShipmentsJson;
+    if (!raw) return [];
+    var parsed = JSON.parse(String(raw));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function gb_writeConsolidationShipments_(sheet, list) {
+  gb_upsertSetting_(sheet, 'consolidationShipmentsJson', JSON.stringify(list || []));
 }
 
 var GB_BANK_VIEWER_LOG_LIMIT = 400;
@@ -1409,13 +1501,14 @@ function gb_confirmPaymentReport_(pl) {
     });
   }
   var journalRow = {
-    id: 'j_pr_' + Date.now(),
+    id: report.journalEntryId || ('j_pr_' + Date.now()),
     date: report.remittanceDate,
     bank: bank || '待分類',
     type: '收入',
     amount: totalIn,
     category: '團購訂金',
-    note: report.customerName + ' 付款回報 ' + confirmedLines.length + ' 筆 · 後五碼 ' + report.lastFive
+    lastFive: String(report.lastFive || '').replace(/\D/g, '').slice(-5),
+    note: report.customerName + ' ' + confirmedLines.map(function (l) { return l.groupName; }).join('、')
   };
   var confirmedOrderIds = [];
   for (var coi = 0; coi < confirmedLines.length; coi++) confirmedOrderIds.push(confirmedLines[coi].orderId);
@@ -1478,11 +1571,11 @@ function gb_confirmPaymentReport_(pl) {
   }
   gb_performSave_({
     groups: groups,
-    bankJournal: [journalRow].concat(all.bankJournal || []),
     exchangeRate: all.exchangeRate,
     portalConfig: all.portalConfig,
     paymentReports: nextReports
   });
+  gb_writeJournalSheet_(gb_upsertJournalRows_(all.bankJournal || [], [journalRow]));
   return { ok: true, message: '已確認付款' };
 }
 
@@ -1596,11 +1689,11 @@ function gb_supplementPaymentReport_(pl) {
   };
   gb_performSave_({
     groups: groups,
-    bankJournal: [journalRow].concat(all.bankJournal || []),
     exchangeRate: all.exchangeRate,
     portalConfig: all.portalConfig,
     paymentReports: reports
   });
+  gb_writeJournalSheet_(gb_upsertJournalRows_(all.bankJournal || [], [journalRow]));
   return { ok: true, message: '補款已入帳' };
 }
 
@@ -1626,15 +1719,7 @@ function gb_findPaymentReportJournal_(bankJournal, report) {
 }
 
 function gb_applyRevertPaymentReport_(groups, bankJournal, report) {
-  var journal = gb_findPaymentReportJournal_(bankJournal || [], report);
-  var nextJournal = [];
-  if (journal) {
-    for (var ji = 0; ji < bankJournal.length; ji++) {
-      if (bankJournal[ji].id !== journal.id) nextJournal.push(bankJournal[ji]);
-    }
-  } else {
-    nextJournal = bankJournal || [];
-  }
+  var nextJournal = bankJournal || [];
   var target = {};
   for (var ti = 0; ti < report.orderIds.length; ti++) target[report.orderIds[ti]] = true;
   var expectedByOrder = {};
@@ -1677,7 +1762,8 @@ function gb_applyRevertPaymentReport_(groups, bankJournal, report) {
     orderIds: report.orderIds,
     lines: nextLines,
     status: 'pending',
-    submittedAt: report.submittedAt
+    submittedAt: report.submittedAt,
+    journalEntryId: report.journalEntryId
   };
   return { groups: groups, bankJournal: nextJournal, report: nextReport };
 }

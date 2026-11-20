@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Group, Order } from '../../daigou/types'
 import type { SharedCustomerBalanceMemo, SubmitCustomerPaymentReportResult } from '../../api/types'

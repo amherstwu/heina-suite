@@ -11,6 +11,7 @@ import type { GroupBuyAppData } from '../api/types'
 import { syncV50GroupOrdersToDaigou } from '../modules/groupbuy/v50DaigouSync'
 import { classifyDaigouOrder, countOrderBuckets, groupOrdersByCustomerName, ORDER_BUCKET_LABELS, type DaigouOrderBucket } from '../modules/groupbuy/v50Utils'
 import { useDaigouStore } from '../daigou/store'
+import { CustomerNoteField } from '../components/customers/CustomerNoteField'
 import { getOrderStatusLabel, getPaymentStatusLabel } from '../daigou/statusDisplay'
 import type { Customer, Order, OrderStatus, PaymentStatus, Transaction } from '../daigou/types'
 import '../modules/groupbuy/groupbuy.css'
@@ -64,6 +65,7 @@ export function AdminNicknameSearchPage() {
   const api = useApi()
   const orders = useDaigouStore((s) => s.orders)
   const customers = useDaigouStore((s) => s.customers)
+  const updateCustomer = useDaigouStore((s) => s.updateCustomer)
   const groups = useDaigouStore((s) => s.groups)
   const transactions = useDaigouStore((s) => s.transactions)
   const addToast = useDaigouStore((s) => s.addToast)
@@ -190,12 +192,16 @@ export function AdminNicknameSearchPage() {
       <PageHeader
         title="暱稱查單"
         action={
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center" role="group" aria-label="結果檢視模式">
-            <Btn variant="secondary" onClick={() => void refreshFromGroupbuy()} disabled={syncing}>
+          <>
+            <Btn variant="secondary" className="nickname-search-sync-btn" onClick={() => void refreshFromGroupbuy()} disabled={syncing}>
               <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               同步團務
             </Btn>
-            <div className="flex rounded-xl border border-white/[0.08] bg-ds-card/45 p-1 shadow-inner">
+            <div
+              className="nickname-search-view-toggle flex w-full rounded-xl border border-white/[0.08] bg-ds-card/45 p-1 shadow-inner sm:w-auto"
+              role="group"
+              aria-label="結果檢視模式"
+            >
               <button
                 type="button"
                 className={cx(
@@ -217,7 +223,7 @@ export function AdminNicknameSearchPage() {
                 顧客畫面預覽
               </button>
             </div>
-          </div>
+          </>
         }
       />
 
@@ -362,6 +368,14 @@ export function AdminNicknameSearchPage() {
                       訂單 {custOrders.length} 筆 · 未結餘額 NT$ {c.totalUnpaidBalance.toLocaleString()}
                       {c.lastOrderAt ? ` · 最近訂單 ${c.lastOrderAt}` : ''}
                     </p>
+                    <div className="nickname-customer-note">
+                      <CustomerNoteField
+                        compact
+                        autoSize
+                        value={c.customerNote}
+                        onSave={(next) => updateCustomer(c.id, { customerNote: next })}
+                      />
+                    </div>
                   </div>
                   <Link className="text-body font-semibold text-ds-primary hover:underline" to={`/customers/${c.id}`}>
                     客戶詳情

@@ -3,9 +3,9 @@
   inset: 0;
   z-index: 120;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 1rem;
   background: rgba(72, 88, 108, 0.55);
   backdrop-filter: blur(6px);
 }
@@ -20,11 +20,11 @@
 .group-setup-card {
   width: 100%;
   max-width: 26rem;
-  max-height: min(92dvh, 40rem);
+  max-height: min(86dvh, 40rem);
   overflow-y: auto;
-  border-radius: 1.35rem 1.35rem 0 0;
+  border-radius: 1.35rem;
   background: linear-gradient(180deg, #f8f3eb 0%, #f3ece2 100%);
-  padding: 1.35rem 1.15rem calc(1.25rem + env(safe-area-inset-bottom));
+  padding: 1.35rem 1.15rem 1.25rem;
   box-shadow: 0 24px 64px rgba(30, 41, 59, 0.28);
 }
 
@@ -33,6 +33,20 @@
     border-radius: 1.35rem;
     padding: 1.5rem 1.35rem 1.35rem;
   }
+}
+
+.admin-shell.admin-view-mobile .group-setup-backdrop,
+html[data-admin-view='mobile'] .group-setup-backdrop {
+  align-items: center;
+  padding: 1rem;
+}
+
+.admin-shell.admin-view-mobile .group-setup-card,
+html[data-admin-view='mobile'] .group-setup-card {
+  width: min(100%, 26rem);
+  max-height: min(86dvh, 40rem);
+  border-radius: 1.35rem;
+  margin: 0 auto;
 }
 
 .group-setup-head {
@@ -98,7 +112,7 @@
 
 .group-setup-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.65rem;
 }
 
@@ -134,17 +148,108 @@
   min-height: 10rem;
 }
 
-.group-setup-input[type='date'] {
-  color-scheme: light;
+.group-setup-row-dates {
+  gap: 0.45rem;
 }
 
-.group-setup-input-date:invalid,
-.group-setup-input-date:required:invalid {
+.group-setup-row-dates .group-setup-field {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.group-setup-date {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  width: 100%;
+  min-height: 2.45rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(176, 190, 210, 0.45);
+  border-radius: 0.85rem;
+  background: #fff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.group-setup-date-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: #2f4568;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.group-setup-date.is-empty .group-setup-date-text {
   color: #8fa3be;
 }
 
-.group-setup-input-date:not(:invalid) {
-  color: #2f4568;
+.group-setup-date::after {
+  content: '';
+  flex-shrink: 0;
+  width: 0.9rem;
+  height: 0.9rem;
+  pointer-events: none;
+  background: currentColor;
+  color: #8fa3be;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='black' d='M5 1.25a.75.75 0 0 1 .75.75v.5h4.5V2a.75.75 0 0 1 1.5 0v.5H13A1.75 1.75 0 0 1 14.75 4.25v9A1.75 1.75 0 0 1 13 15H3a1.75 1.75 0 0 1-1.75-1.75v-9A1.75 1.75 0 0 1 3 2.5h1.25V2A.75.75 0 0 1 5 1.25Zm7.25 4.5H3.75v7.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V5.75Z'/></svg>") center / contain no-repeat;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='black' d='M5 1.25a.75.75 0 0 1 .75.75v.5h4.5V2a.75.75 0 0 1 1.5 0v.5H13A1.75 1.75 0 0 1 14.75 4.25v9A1.75 1.75 0 0 1 13 15H3a1.75 1.75 0 0 1-1.75-1.75v-9A1.75 1.75 0 0 1 3 2.5h1.25V2A.75.75 0 0 1 5 1.25Zm7.25 4.5H3.75v7.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V5.75Z'/></svg>") center / contain no-repeat;
+}
+
+.group-setup-date-native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  color-scheme: light;
+}
+
+.group-setup-row-dates .group-setup-input,
+.group-setup-input-date {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 2.45rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.82rem;
+  overflow: hidden;
+}
+
+@media (max-width: 639px) {
+  .group-setup-row-dates {
+    gap: 0.4rem;
+  }
+
+  .group-setup-date,
+  .group-setup-row-dates .group-setup-input,
+  .group-setup-input-date {
+    min-height: 2.35rem;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.78rem;
+  }
+}
+
+.admin-shell.admin-view-mobile .group-setup-date,
+.admin-shell.admin-view-mobile .group-setup-row-dates .group-setup-input,
+.admin-shell.admin-view-mobile .group-setup-input-date,
+html[data-admin-view='mobile'] .group-setup-date,
+html[data-admin-view='mobile'] .group-setup-row-dates .group-setup-input,
+html[data-admin-view='mobile'] .group-setup-input-date {
+  min-height: 2.35rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.78rem;
 }
 
 .group-setup-submit {

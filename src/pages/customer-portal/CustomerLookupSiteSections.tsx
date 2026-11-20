@@ -1,13 +1,12 @@
 import type { PortalConfig } from '../../api/types'
 import {
   announcementsFor,
-  faqFor,
   FOOTER_STATS,
-  processStepsFor,
 } from './staticContent'
-import { guideInfographicsFor } from './mergePortal'
 import { CustomerLookupOpenGroupsSection } from './CustomerLookupOpenGroupsSection'
-import { HeinaGuideInfographics } from './HeinaGuideInfographics'
+import { LookupTeachSection } from './LookupTeachSection'
+import { IconInsta, IconLine, IconThreads, IconUsers } from './PortalIcons'
+import { visibleSocialIconSlots } from './portalSocialIcons'
 import './heinaGuideInfographics.css'
 
 type Props = {
@@ -20,11 +19,12 @@ export function CustomerLookupSiteSections({ portal, showInfo }: Props) {
 
   const announcements = announcementsFor(portal).slice(0, 4)
   const lineHref = portal.lineFriendUrl || portal.serviceUrl || ''
-  const faq = faqFor(portal).slice(0, 8)
-  const steps = processStepsFor(portal)
+  const socialIcons = visibleSocialIconSlots(portal)
 
   return (
     <div className="lk-site-sections">
+      <CustomerLookupOpenGroupsSection />
+
       <section className="lk-site-block" id="news" aria-labelledby="lk-news-title">
         <div className="lk-site-block-head">
           <h2 id="lk-news-title" className="lk-site-block-title">
@@ -46,49 +46,7 @@ export function CustomerLookupSiteSections({ portal, showInfo }: Props) {
         </ul>
       </section>
 
-      <CustomerLookupOpenGroupsSection />
-
-      <section className="lk-site-block" id="guide" aria-labelledby="lk-guide-title">
-        <div className="lk-site-block-head">
-          <h2 id="lk-guide-title" className="lk-site-block-title">
-            代購流程說明
-          </h2>
-          <p className="lk-site-block-desc">官方流程圖：購物、交易規則與匯率計算（點圖可放大）</p>
-        </div>
-        <HeinaGuideInfographics variant="lookup" items={guideInfographicsFor(portal)} />
-        <div className="lk-site-block-head lk-site-block-head--sub">
-          <h3 className="lk-site-block-subtitle">文字摘要</h3>
-          <p className="lk-site-block-desc">從下單到取貨的步驟說明</p>
-        </div>
-        <ol className="lk-steps">
-          {steps.map((s) => (
-            <li key={s.n} className="lk-step">
-              <span className="lk-step-num">{s.n}</span>
-              <div>
-                <p className="lk-step-title">{s.title}</p>
-                <p className="lk-step-detail">{s.detail}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="lk-site-block" id="faq" aria-labelledby="lk-faq-title">
-        <div className="lk-site-block-head">
-          <h2 id="lk-faq-title" className="lk-site-block-title">
-            常見問題
-          </h2>
-          <p className="lk-site-block-desc">查單、付款與出貨相關說明</p>
-        </div>
-        <div className="lk-faq-list">
-          {faq.map((item) => (
-            <details key={item.id || item.q} className="lk-faq-item">
-              <summary>{item.q}</summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
+      <LookupTeachSection portal={portal} />
 
       <section className="lk-site-block lk-site-block--contact" id="contact" aria-labelledby="lk-contact-title">
         <div className="lk-site-block-head">
@@ -103,7 +61,33 @@ export function CustomerLookupSiteSections({ portal, showInfo }: Props) {
               官方 LINE 客服
             </a>
           ) : null}
-          {portal.extraNote?.trim() ? <p className="lk-contact-note">{portal.extraNote.trim()}</p> : null}
+          {socialIcons.length ? (
+            <nav className="lk-social-icons" aria-label="社群連結">
+              {socialIcons.map((slot) => (
+                <a
+                  key={slot.id}
+                  className="lk-social-icon"
+                  href={slot.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={slot.label}
+                  aria-label={slot.label}
+                >
+                  {slot.iconUrl ? (
+                    <img src={slot.iconUrl} alt="" />
+                  ) : slot.kind === 'ig' ? (
+                    <IconInsta className="lk-social-ic" />
+                  ) : slot.kind === 'threads' ? (
+                    <IconThreads className="lk-social-ic" />
+                  ) : slot.kind === 'line' ? (
+                    <IconLine className="lk-social-ic" />
+                  ) : (
+                    <IconUsers className="lk-social-ic" />
+                  )}
+                </a>
+              ))}
+            </nav>
+          ) : null}
         </div>
       </section>
 

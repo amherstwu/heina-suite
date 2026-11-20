@@ -284,7 +284,7 @@ export function V50GroupCostPanel({ group, saving, onSave }: Props) {
                 </div>
               </label>
               <label className="v50-group-cost-field v50-group-cost-field--weight">
-                <span className="v50-group-cost-label">重量(kg)</span>
+                <span className="v50-group-cost-label">入庫重量(kg)</span>
                 <div className="v50-group-cost-input-wrap v50-group-cost-input-wrap--text">
                   <input
                     className="v50-group-cost-input v50-group-cost-input--text"

@@ -11,27 +11,27 @@ import {
   TRANSACTION_CATEGORY_LABEL,
 } from '../daigou/constants'
 import {
-  CustomerBalanceMemoAddForm,
-  CustomerBalanceMemoList,
+  CustomerBalanceMemoDetailSection,
 } from '../components/customers/CustomerBalanceMemoPanel'
-import { hasOpenBalanceMemos } from '../daigou/customerBalanceMemo'
 import { normalizeBankLastFiveCodes } from '../daigou/customerBankLastFive'
 import { CustomerBankLastFiveEditor } from '../components/customers/CustomerBankLastFiveEditor'
 import { isValidLookupPin, normalizeLookupPin, effectiveLookupPin } from '../daigou/portalLookupAuth'
 
-function formatJoinedAt(ms?: number) {
-  if (!ms || !Number.isFinite(ms) || ms <= 0) return '未記錄'
-  try {
-    return new Date(ms).toLocaleString('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return '未記錄'
-  }
+function toJoinedDateInput(ms?: number) {
+  if (!ms || !Number.isFinite(ms) || ms <= 0) return ''
+  const d = new Date(ms)
+  if (Number.isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function fromJoinedDateInput(value: string) {
+  const v = value.trim()
+  if (!v) return undefined
+  const ms = new Date(`${v}T12:00:00`).getTime()
+  return Number.isFinite(ms) ? ms : undefined
 }
 
 export function CustomerDetailPage() {
@@ -46,6 +46,7 @@ export function CustomerDetailPage() {
   const updateCustomer = useDaigouStore((s) => s.updateCustomer)
   const addToast = useDaigouStore((s) => s.addToast)
   const [notesDraft, setNotesDraft] = useState('')
+  const [customerNoteDraft, setCustomerNoteDraft] = useState('')
   const [lookupPinDraft, setLookupPinDraft] = useState('')
 
   const c = customers.find((x) => x.id === id)
@@ -93,8 +94,9 @@ export function CustomerDetailPage() {
   useEffect(() => {
     if (!c) return
     setNotesDraft(c.notes)
+    setCustomerNoteDraft(c.customerNote ?? '')
     setLookupPinDraft(effectiveLookupPin(c.lookupPin))
-  }, [c?.id, c?.notes, c?.lookupPin])
+  }, [c?.id, c?.notes, c?.customerNote, c?.lookupPin])
 
   if (!c) {
     return (
@@ -145,26 +147,7 @@ export function CustomerDetailPage() {
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card className="!p-5 md:col-span-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-section font-semibold text-ds-text">帳務備註</h2>
-          <p className="mt-1 text-meta text-ds-text-muted">
-            手動輸入金額：正數＝客人欠我、負數＝我欠客人。客人付款回報可勾選結清；未勾選則出貨物流加總至尾款、出貨時可抵銷。
-          </p>
-            </div>
-            {hasOpenBalanceMemos(c.balanceMemos) ? <Chip tone="warn">有待處理帳務</Chip> : null}
-          </div>
-          <div className="mt-4 grid gap-6 lg:grid-cols-2">
-            <div>
-              <p className="mb-2 text-meta font-semibold text-ds-text-secondary">待處理</p>
-              <CustomerBalanceMemoList customerId={c.id} memos={c.balanceMemos} />
-              <CustomerBalanceMemoAddForm customerId={c.id} />
-            </div>
-            <div>
-              <p className="mb-2 text-meta font-semibold text-ds-text-secondary">已抵銷紀錄</p>
-              <CustomerBalanceMemoList customerId={c.id} memos={c.balanceMemos} showSettled />
-            </div>
-          </div>
+          <CustomerBalanceMemoDetailSection customerId={c.id} memos={c.balanceMemos} />
         </Card>
 
         <Card className="!p-5 md:col-span-3">
@@ -221,10 +204,32 @@ export function CustomerDetailPage() {
         </Card>
 
         <Card className="!p-5 md:col-span-3">
-          <p className="text-meta font-semibold text-ds-text-secondary">加入時間</p>
-          <p className="mt-2 text-body font-semibold text-ds-text">{formatJoinedAt(c.createdAt)}</p>
+          <label className="block">
+            <span className="text-meta font-semibold text-ds-text-secondary">加入時間</span>
+            <input
+              type="date"
+              className="mt-2 w-full rounded-xl border border-white/[0.1] bg-ds-surface px-3 py-2.5 text-body text-ds-text"
+              value={toJoinedDateInput(c.createdAt)}
+              onChange={(e) => updateCustomer(c.id, { createdAt: fromJoinedDateInput(e.target.value) })}
+            />
+          </label>
           <label className="mt-4 block">
-            <span className="text-meta font-semibold text-ds-text-secondary">一般備註</span>
+            <span className="text-meta font-semibold text-ds-text-secondary">對客備註</span>
+            <textarea
+              className="mt-2 w-full rounded-xl border border-white/[0.1] bg-ds-surface px-3 py-2.5 text-body text-ds-text"
+              rows={2}
+              value={customerNoteDraft}
+              onChange={(e) => setCustomerNoteDraft(e.target.value)}
+              onBlur={() => {
+                if (customerNoteDraft !== (c.customerNote ?? '')) {
+                  updateCustomer(c.id, { customerNote: customerNoteDraft.trim() })
+                }
+              }}
+              placeholder="客人查單、通知時可看到的備註"
+            />
+          </label>
+          <label className="mt-4 block">
+            <span className="text-meta font-semibold text-ds-text-secondary">內部備註</span>
             <textarea
               className="mt-2 w-full rounded-xl border border-white/[0.1] bg-ds-surface px-3 py-2.5 text-body text-ds-text"
               rows={2}

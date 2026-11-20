@@ -18,6 +18,8 @@ const EXPORT_HEADERS = [
   '台幣小計',
   '國內運費',
   '國際運費',
+  '訂金',
+  '付款狀態',
 ] as const
 
 function itemLineTwd(item: { twd: number; qty: number }): number {
@@ -26,6 +28,13 @@ function itemLineTwd(item: { twd: number; qty: number }): number {
 
 function itemLineJpy(item: { jpy: number; qty: number }): number {
   return (Number(item.jpy) || 0) * (Number(item.qty) || 1)
+}
+
+/** 有付款才寫出訂金；未付款、貨到付款留空 */
+function paidDepositCell(order: GroupBuyOrder): number | '' {
+  const pay = String(order.paymentStatus || '').trim()
+  if (pay !== '已付訂金' && pay !== '已付款' && pay !== '已結清') return ''
+  return Number(order.deposit) || 0
 }
 
 function norm(s: string) {
@@ -72,12 +81,16 @@ export type V50ImportBlock = {
   items: GroupBuyItem[]
   domesticShip: number
   intlShip: number
+  /** null＝表上沒填，沿用既有客訂或系統計算 */
+  deposit: number | null
+  paymentStatus: string
 }
 
 export type V50ImportParseResult = {
   blocks: V50ImportBlock[]
   warnings: string[]
   sheetName: string
+  failed?: number
 }
 
 export function exportV50GroupsToXlsx(groups: GroupBuyGroup[], filename?: string) {
@@ -101,6 +114,8 @@ export function exportV50GroupsToXlsx(groups: GroupBuyGroup[], filename?: string
           itemLineTwd(item),
           idx === 0 ? order.domesticShip || 0 : '',
           idx === 0 ? order.intlShip || 0 : '',
+          idx === 0 ? paidDepositCell(order) : '',
+          idx === 0 ? order.paymentStatus || '未付款' : '',
         ])
       })
     }
@@ -228,8 +243,8 @@ export function downloadV50OrderTemplateXlsx() {
   const wb = XLSX.utils.book_new()
   const headers: (string | number)[][] = [
     [...EXPORT_HEADERS],
-    ['', '範例客人', '範例商品A', 1, 1999, 1999, 590, 590, 0, 0],
-    ['', '', '範例商品B', 2, 999, 1998, 125, 250, '', ''],
+    ['', '範例客人', '範例商品A', 1, 1999, 1999, 590, 590, 0, 0, 500, '已付訂金'],
+    ['', '', '範例商品B', 2, 999, 1998, 125, 250, '', '', '', ''],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(headers), '登記表')
   const note: (string | number)[][] = [
@@ -238,7 +253,8 @@ export function downloadV50OrderTemplateXlsx() {
     ['2. 若每列都重複填名字，會被誤判成多筆客訂；續列品項請勿再填名字。'],
     ['3. 台幣單價=每件；台幣小計=單價×數量。日幣總額=日幣單價×數量（匯出用，匯入可略）。'],
     ['4. 匯入可只填台幣小計或日幣總額，系統會除以數量得單價。'],
-    ['5. 訂金、尾款由系統計算；更新既有客訂請填訂單ID。'],
+    ['5. 訂金、付款狀態請填在該客訂第一列。有填就以表上的為準；留空則沿用既有客訂或由系統計算。'],
+    ['6. 多團同時匯入：每個團務一個工作表，工作表名稱請與團務名稱相同。'],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(note), '說明')
   XLSX.writeFile(wb, '團務客訂匯入範本.xlsx')
@@ -326,6 +342,8 @@ function parseRowsToBlocks(rows: Record<string, unknown>[]): V50ImportParseResul
         items: [],
         domesticShip: domesticShip || 0,
         intlShip: intlShip || 0,
+        deposit: null,
+        paymentStatus: '',
       }
     } else if (!cur) {
       if (product) warnings.push(`第 ${i + 1} 列：有商品「${product}」但上方尚無客戶，已略過`)
@@ -336,6 +354,10 @@ function parseRowsToBlocks(rows: Record<string, unknown>[]): V50ImportParseResul
     if (name.trim() && !cur!.customerName) cur!.customerName = name.trim()
     if (domesticShip > 0) cur!.domesticShip = domesticShip
     if (intlShip > 0) cur!.intlShip = intlShip
+    const depositText = pick(row, '訂金')
+    if (depositText !== '') cur!.deposit = numCell(row, '訂金')
+    const payStatus = pick(row, '付款狀態', '支付狀態')
+    if (payStatus) cur!.paymentStatus = payStatus
 
     if (product) {
       const qty = Math.max(1, qtyHint || 1)
@@ -360,7 +382,7 @@ function parseRowsToBlocks(rows: Record<string, unknown>[]): V50ImportParseResul
   }
 
   const valid = blocks.filter((b) => b.customerName.trim() && b.items.length)
-  return { blocks: valid, warnings, sheetName: '' }
+  return { blocks: valid, warnings, sheetName: '', failed: blocks.length - valid.length }
 }
 
 export function parseV50ImportWorkbook(
@@ -402,11 +424,12 @@ function finalizeImportedOrder(
   const domesticShip = block.domesticShip
   const intlShip = block.intlShip
   const totalTwd = calcItemsTotalTwd(items)
-  const paymentStatus = existing?.paymentStatus ?? '未付款'
+  const paymentStatus = block.paymentStatus.trim() || existing?.paymentStatus || '未付款'
   const paymentInfo = existing?.paymentInfo ?? ''
 
   let deposit: number
   if (paymentStatus === '貨到付款') deposit = 0
+  else if (block.deposit != null) deposit = Math.max(0, block.deposit)
   else if (paymentStatus === '已付款') deposit = totalTwd
   else if (paymentStatus === '已付訂金' && existing) {
     const prev = Number(existing.deposit) || 0
@@ -494,4 +517,98 @@ export function applyV50ImportToGroup(
   }
 
   return { updated, added, skipped, warnings, orders }
+}
+
+export type V50GroupImportPlan = {
+  groupId: string
+  groupName: string
+  sheetName: string
+  added: number
+  updated: number
+  failed: number
+  warnings: string[]
+  orders: GroupBuyOrder[]
+}
+
+export type V50WorkbookImportPreview = {
+  plans: V50GroupImportPlan[]
+  addable: number
+  updatable: number
+  failed: number
+  warnings: string[]
+}
+
+function matchImportGroup(sheetName: string, groups: GroupBuyGroup[]): GroupBuyGroup | undefined {
+  const key = norm(sheetName)
+  return (
+    groups.find((g) => norm(g.name) === key) ??
+    groups.find((g) => {
+      const n = norm(g.name)
+      return n.length >= 2 && (key.includes(n) || n.includes(key))
+    })
+  )
+}
+
+/** 依工作表名稱對應團務，先試算可新增／可更新／失敗，不寫入資料 */
+export function previewV50WorkbookImport(
+  ab: ArrayBuffer,
+  groups: GroupBuyGroup[],
+): V50WorkbookImportPreview {
+  const wb = XLSX.read(ab, { type: 'array' })
+  const sheetNames = (wb.SheetNames || []).filter((n) => norm(n) !== '說明')
+  const warnings: string[] = []
+  const plans: V50GroupImportPlan[] = []
+  let seq = 0
+  const newId = () => `o_${Date.now().toString(36)}_${(seq += 1).toString(16)}`
+
+  const dataSheets = sheetNames.filter((n) => wb.Sheets[n])
+  const loneGroup = groups.length === 1 ? groups[0] : undefined
+
+  for (const sheetName of dataSheets) {
+    const ws = wb.Sheets[sheetName]
+    const parsed = parseRowsToBlocks(sheetToRowRecords(ws))
+    let group = matchImportGroup(sheetName, groups)
+    if (!group && loneGroup && dataSheets.length === 1) {
+      group = loneGroup
+      warnings.push(`工作表「${sheetName}」未與團名相同，將匯入唯一團務「${group.name}」`)
+    }
+    const rowFailed = parsed.failed || 0
+    if (!group) {
+      const n = parsed.blocks.length + rowFailed || 1
+      warnings.push(`工作表「${sheetName}」找不到同名團務，${n} 筆失敗`)
+      plans.push({
+        groupId: '',
+        groupName: sheetName,
+        sheetName,
+        added: 0,
+        updated: 0,
+        failed: n,
+        warnings: [`找不到同名團務`],
+        orders: [],
+      })
+      continue
+    }
+    const applied = applyV50ImportToGroup(group, parsed.blocks, newId)
+    plans.push({
+      groupId: group.id,
+      groupName: group.name,
+      sheetName,
+      added: applied.added,
+      updated: applied.updated,
+      failed: rowFailed + applied.skipped,
+      warnings: [...parsed.warnings, ...applied.warnings],
+      orders: applied.orders,
+    })
+    warnings.push(...parsed.warnings, ...applied.warnings)
+  }
+
+  if (!dataSheets.length) warnings.push('檔案內沒有可匯入的工作表')
+
+  return {
+    plans,
+    addable: plans.reduce((s, p) => s + p.added, 0),
+    updatable: plans.reduce((s, p) => s + p.updated, 0),
+    failed: plans.reduce((s, p) => s + p.failed, 0),
+    warnings,
+  }
 }

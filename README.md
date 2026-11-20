@@ -65,16 +65,33 @@ npm run build:gas
 - **`deploy/apps-script-bundle/複製到AppsScript.txt`** — 逐步說明（含 `#/procurement` 等路由）。
 - **`deploy/apps-script-bundle/deploy-manifest.json`** — 建置時間與檔案校驗（`npm run deploy` 產生）。
 
+> **注意：** `index.html` 仍約數 MB（內嵌 JS/CSS／壓縮圖）。請**不要**在 Apps Script 網頁編輯器裡打開慢慢改——會存很久、易卡死。更新方式：本機 `npm run build:gas`（或 `npm run deploy`）後整檔覆蓋貼上，或用 clasp push。
+
 ### 用 index.html 預覽（不接 GAS）
+
+**推薦（與貼上 Apps Script 相同前端）：**
+
+- 雙擊 **`open-local-preview.bat`** 或桌面 **「動漫情報系統 本機預覽」**
+- 會依序：`npm run deploy`（含檢查）→ 本機 `http://127.0.0.1:5280/#/lookup`
+- 確認畫面無誤後，雙擊 **`deploy-gas.cmd`** 或桌面 **「動漫情報系統 貼到 Apps Script」**，依 `複製到AppsScript.txt` 貼上 bundle
+
+```bash
+npm run preview:gas
+```
+
+等同建置 + 在 port 5280 預覽 `gas-web/`。
+
+僅快速重建 HTML（略過 deploy 檢查）：
 
 ```bash
 npm run build:gas
+npm run preview:ui
 ```
 
-- **直接開檔**：用檔案總管雙擊 `gas-web/index.html`，或以瀏覽器開啟該路徑（與正式 Web App 相同為 Mock／localStorage）。
-- **本機網址**：`npm run preview:ui`（先建置再啟動靜態伺服器），瀏覽器開 **http://localhost:4175/**（或 `/index.html`）。
+- **直接開檔**：雙擊 `gas-web/index.html`（Mock／localStorage，與 Web App 前端相同）
+- **本機網址**：`preview:ui` 使用 **http://localhost:4175/**
 
-開發中若要熱重載仍請使用 `npm run dev`（入口為根目錄的 `index.html`）。
+開發中若要熱重載仍請使用 `npm run dev`（**不是** GAS 單檔版，僅改 UI 時用）。
 
 ### 部署步驟（clasp）
 

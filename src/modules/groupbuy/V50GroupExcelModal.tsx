@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GroupBuyGroup } from '../../api/types'
 import { normalizeGroupStatus } from './v50Utils'
 import {
-  applyV50ImportToGroup,
   exportV50GroupsFullBackupXlsx,
   exportV50GroupsToXlsx,
-  parseV50ImportWorkbook,
+  previewV50WorkbookImport,
+  type V50WorkbookImportPreview,
 } from './v50ExcelBridge'
 import './v50GroupExcelModal.css'
 
@@ -25,7 +25,10 @@ type ImportProps = {
   mode: 'import'
   groups: GroupBuyGroup[]
   onClose: () => void
-  onImport: (groupId: string, nextOrders: GroupBuyGroup['orders'], summary: string) => void
+  onImport: (
+    updates: { groupId: string; orders: GroupBuyGroup['orders'] }[],
+    summary: string,
+  ) => void
 }
 
 type Props = ExportProps | ExportFullProps | ImportProps
@@ -42,18 +45,15 @@ function eligibleGroups(mode: Props['mode'], groups: GroupBuyGroup[]) {
 export function V50GroupExcelModal(props: Props) {
   const eligible = useMemo(() => eligibleGroups(props.mode, props.groups), [props.mode, props.groups])
   const [selected, setSelected] = useState<Set<string>>(() => new Set(eligible.map((g) => g.id)))
-  const [importGroupId, setImportGroupId] = useState(eligible[0]?.id ?? '')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [warnings, setWarnings] = useState<string[]>([])
+  const [preview, setPreview] = useState<V50WorkbookImportPreview | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setSelected(new Set(eligible.map((g) => g.id)))
-    if (!importGroupId || !eligible.some((g) => g.id === importGroupId)) {
-      setImportGroupId(eligible[0]?.id ?? '')
-    }
-  }, [eligible, importGroupId])
+  }, [eligible])
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -86,30 +86,16 @@ export function V50GroupExcelModal(props: Props) {
 
   async function handleImportFile(file: File | null) {
     if (!file || props.mode !== 'import') return
-    const group = eligible.find((g) => g.id === importGroupId)
-    if (!group) {
-      setMessage('請選擇要匯入的團務')
-      return
-    }
     setBusy(true)
     setMessage('')
     setWarnings([])
+    setPreview(null)
     try {
       const ab = await file.arrayBuffer()
-      const parsed = parseV50ImportWorkbook(ab, group.name)
-      if (!parsed.blocks.length) {
-        setMessage('未解析到可匯入的客訂（需含名字與商品品項）')
-        setWarnings(parsed.warnings)
-        return
-      }
-      const newId = () =>
-        `o_${Date.now()}_${Math.random().toString(16).slice(2, 6)}`
-      const result = applyV50ImportToGroup(group, parsed.blocks, newId)
-      const allWarnings = [...parsed.warnings, ...result.warnings]
-      setWarnings(allWarnings)
-      const summary = `已更新 ${result.updated} 筆、新增 ${result.added} 筆${result.skipped ? `、略過 ${result.skipped} 筆` : ''}`
-      setMessage(summary)
-      props.onImport(group.id, result.orders, summary)
+      const next = previewV50WorkbookImport(ab, eligible)
+      setPreview(next)
+      setWarnings(next.warnings)
+      setMessage(`可新增 ${next.addable} 筆、失敗 ${next.failed} 筆${next.updatable ? `、可更新 ${next.updatable} 筆` : ''}`)
     } catch (e) {
       console.error(e)
       setMessage('讀取檔案失敗，請確認為 .xlsx 格式')
@@ -117,6 +103,20 @@ export function V50GroupExcelModal(props: Props) {
       setBusy(false)
       if (fileRef.current) fileRef.current.value = ''
     }
+  }
+
+  function confirmImport() {
+    if (props.mode !== 'import' || !preview) return
+    const updates = preview.plans
+      .filter((p) => p.groupId && (p.added > 0 || p.updated > 0))
+      .map((p) => ({ groupId: p.groupId, orders: p.orders }))
+    if (!updates.length) {
+      setMessage('沒有可匯入的客訂')
+      return
+    }
+    const summary = `已匯入：新增 ${preview.addable} 筆${preview.updatable ? `、更新 ${preview.updatable} 筆` : ''}${preview.failed ? `、失敗 ${preview.failed} 筆` : ''}`
+    props.onImport(updates, summary)
+    props.onClose()
   }
 
   const isExportPick = props.mode === 'export' || props.mode === 'exportFull'
@@ -133,7 +133,7 @@ export function V50GroupExcelModal(props: Props) {
       ? '勾選要備份的團務（含已結束）。每團一工作表：團務主檔＋客訂明細；台幣售價為數量×單價。僅供本機備份，請勿用於匯入。'
       : props.mode === 'export'
         ? '選擇要匯出的團務（不含已結束）。同一客戶多品項會分多列；續列名字請留空。'
-        : '選擇目標團務並上傳。同一客訂多品項：僅第一列填名字；續列只填商品欄位。'
+        : '上傳 Excel 後先預覽。每個工作表名稱需與團務名稱相同，可一次匯入多團。確認後才會寫入。'
 
   const emptyText =
     props.mode === 'exportFull'
@@ -198,20 +198,6 @@ export function V50GroupExcelModal(props: Props) {
           </>
         ) : (
           <>
-            <label className="v50-excel-field">
-              <span className="v50-excel-label">匯入至團務</span>
-              <select
-                className="heina-input v50-excel-select"
-                value={importGroupId}
-                onChange={(e) => setImportGroupId(e.target.value)}
-              >
-                {eligible.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}（{normalizeGroupStatus(g.status)}）
-                  </option>
-                ))}
-              </select>
-            </label>
             <input
               ref={fileRef}
               type="file"
@@ -219,17 +205,43 @@ export function V50GroupExcelModal(props: Props) {
               className="hidden"
               onChange={(e) => void handleImportFile(e.target.files?.[0] ?? null)}
             />
+            {preview ? (
+              <ul className="v50-excel-list">
+                {preview.plans.map((p) => (
+                  <li key={`${p.sheetName}-${p.groupId || 'miss'}`}>
+                    <div className="v50-excel-row">
+                      <span className="v50-excel-row-name">{p.groupName}</span>
+                      <span className="v50-excel-row-meta">
+                        {p.groupId
+                          ? `可新增 ${p.added}${p.updated ? ` · 可更新 ${p.updated}` : ''} · 失敗 ${p.failed}`
+                          : `失敗 ${p.failed}`}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="v50-excel-empty">尚未選擇檔案。多團請把每個團放在同名工作表。</p>
+            )}
             <div className="v50-excel-actions">
               <button type="button" className="v50-excel-btn v50-excel-btn--ghost" onClick={props.onClose}>
                 取消
               </button>
               <button
                 type="button"
-                className="v50-excel-btn v50-excel-btn--primary"
-                disabled={busy || !importGroupId}
+                className="v50-excel-btn v50-excel-btn--ghost"
+                disabled={busy}
                 onClick={() => fileRef.current?.click()}
               >
-                {busy ? '匯入中…' : '選擇 Excel 檔案'}
+                {busy ? '讀取中…' : preview ? '重選檔案' : '選擇 Excel 檔案'}
+              </button>
+              <button
+                type="button"
+                className="v50-excel-btn v50-excel-btn--primary"
+                disabled={busy || !preview || preview.addable + preview.updatable === 0}
+                onClick={confirmImport}
+              >
+                確認匯入
               </button>
             </div>
           </>

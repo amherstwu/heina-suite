@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Copy, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
+import { RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { Btn, Card, PageHeader } from '../components/ui'
 import { useApi } from '../context/useApi'
 import type {
@@ -14,7 +14,6 @@ import type {
   UpdatePaymentReportLineFlagsPayload,
 } from '../api/types'
 import {
-  buildPaymentReportCopyText,
   findGroupBuyOrder,
   lineExpectedDeposit,
   sumPaymentReportDeposits,
@@ -29,6 +28,7 @@ import {
   type PaymentReportSourceFilter,
 } from '../modules/groupbuy/paymentReportListUtils'
 import { useDaigouStore } from '../daigou/store'
+import { BalanceMemoCollapsible } from '../components/customers/CustomerBalanceMemoPanel'
 import { formatMemoAmount } from '../daigou/customerBalanceMemo'
 import '../modules/groupbuy/groupbuy.css'
 import '../modules/groupbuy/v50GroupCard.css'
@@ -36,6 +36,10 @@ import './paymentReportPage.css'
 
 type ActionResult = { ok: boolean; message?: string }
 type ReportTab = 'pending' | 'confirmed'
+
+function sumReportMemoAmounts(memos: { amountTwd: number }[] | undefined): number {
+  return (memos || []).reduce((sum, m) => sum + (Number(m.amountTwd) || 0), 0)
+}
 
 function reportBalanceMemoIds(report: CustomerPaymentReport): string[] {
   return (report.balanceMemos || []).map((m) => m.id).filter(Boolean)
@@ -251,26 +255,6 @@ export function PaymentReportPage() {
     setDepositByReport(initDepositMap(reports, nextGroups))
     setSelectedByReport(initSelectedMap(reports))
     return data
-  }
-
-  async function copyReportText(
-    report: CustomerPaymentReport,
-    lineDeposits?: Record<string, number>,
-    selected?: Set<string>,
-  ) {
-    const text = buildPaymentReportCopyText(
-      report.remittanceDate,
-      report.lastFive,
-      report.lines,
-      lineDeposits,
-      selected,
-    )
-    try {
-      await navigator.clipboard.writeText(text)
-      flashStatus('已複製對帳文字', 2200)
-    } catch {
-      flashStatus('複製失敗', 2200)
-    }
   }
 
   async function deleteReport(report: CustomerPaymentReport) {
@@ -490,15 +474,15 @@ export function PaymentReportPage() {
       <PageHeader
         title="付款回報"
         action={
-          <>
-            <Btn variant="secondary" onClick={() => void load()}>
+          <div className="pr-header-actions">
+            <Btn variant="secondary" className="pr-reload-btn" onClick={() => void load()}>
               <RefreshCw className="h-4 w-4" />
               重新載入
             </Btn>
-            <Btn variant="secondary" to="/payment-review">
+            <Btn variant="secondary" className="pr-review-shortcut" to="/payment-review">
               付款審核
             </Btn>
-          </>
+          </div>
         }
       />
 
@@ -654,15 +638,6 @@ export function PaymentReportPage() {
               isPending &&
               report.orderIds.length > 0 &&
               (selectedByReport[report.id]?.length ?? 0) === report.orderIds.length
-            const copyText = isPending
-              ? buildPaymentReportCopyText(
-                  report.remittanceDate,
-                  report.lastFive,
-                  report.lines,
-                  lineDeposits,
-                  selected,
-                )
-              : ''
 
             return (
               <article
@@ -710,21 +685,6 @@ export function PaymentReportPage() {
                         </div>
                       </div>
                     </header>
-
-                    <div className="pr-copy-box">
-                      <div className="pr-copy-head">
-                        <span className="pr-copy-title">對帳複製文字</span>
-                        <button
-                          type="button"
-                          className="pr-btn pr-btn--ghost"
-                          onClick={() => void copyReportText(report, lineDeposits, selected)}
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                          複製
-                        </button>
-                      </div>
-                      <pre className="pr-copy-text">{copyText}</pre>
-                    </div>
 
                     <div className="pr-orders">
                       <div className="pr-select-all">
@@ -788,8 +748,12 @@ export function PaymentReportPage() {
                     </div>
 
                     {(report.balanceMemos || []).length > 0 ? (
-                      <div className="pr-balance-memos">
-                        <p className="pr-balance-memos-title">帳務備註（確認後改為已抵銷）</p>
+                      <BalanceMemoCollapsible
+                        title="帳務備註（確認後改為已抵銷）"
+                        summary={`${report.balanceMemos!.length} 筆 · 合計 ${formatMemoAmount(sumReportMemoAmounts(report.balanceMemos))}`}
+                        className="pr-balance-memos"
+                        storageKey={`heina.pr.cbm.${report.id}`}
+                      >
                         <ul className="pr-balance-memos-list">
                           {(report.balanceMemos || []).map((m) => (
                             <li key={m.id}>
@@ -800,7 +764,7 @@ export function PaymentReportPage() {
                             </li>
                           ))}
                         </ul>
-                      </div>
+                      </BalanceMemoCollapsible>
                     ) : null}
 
                     <footer className="pr-footer">
@@ -965,8 +929,13 @@ export function PaymentReportPage() {
                         })}
                       </div>
                       {(report.balanceMemos || []).length > 0 ? (
-                        <div className="pr-balance-memos pr-balance-memos--confirmed">
-                          <p className="pr-balance-memos-title">帳務備註（已隨回報抵銷）</p>
+                        <BalanceMemoCollapsible
+                          title="帳務備註（已隨回報抵銷）"
+                          summary={`${report.balanceMemos!.length} 筆 · 合計 ${formatMemoAmount(sumReportMemoAmounts(report.balanceMemos))}`}
+                          className="pr-balance-memos pr-balance-memos--confirmed"
+                          storageKey={`heina.pr.cbm.confirmed.${report.id}`}
+                          defaultCollapsed
+                        >
                           <ul className="pr-balance-memos-list">
                             {(report.balanceMemos || []).map((m) => (
                               <li key={m.id}>
@@ -975,7 +944,7 @@ export function PaymentReportPage() {
                               </li>
                             ))}
                           </ul>
-                        </div>
+                        </BalanceMemoCollapsible>
                       ) : null}
                     </div>
                   </>

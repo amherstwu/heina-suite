@@ -85,6 +85,7 @@ function main() {
   }
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
   writeDeployGuide(builtAt)
+  run('本機預覽首頁資訊', 'node scripts/write-preview-hub-meta.mjs')
 
   console.log('\n✅ 部署產物就緒：')
   console.log('   ', indexPath)

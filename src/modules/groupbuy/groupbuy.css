@@ -835,6 +835,86 @@
   border-radius: 1.25rem;
 }
 
+/* 客單管理：手機版標題左、匯出 CSV 右同一行 */
+.admin-shell.admin-view-mobile .orders-page .admin-page-header,
+html[data-admin-view='mobile'] .orders-page .admin-page-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.75rem;
+  row-gap: 0.5rem;
+}
+
+.admin-shell.admin-view-mobile .orders-page .admin-page-header-text,
+html[data-admin-view='mobile'] .orders-page .admin-page-header-text {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.admin-shell.admin-view-mobile .orders-page .admin-page-header-actions,
+html[data-admin-view='mobile'] .orders-page .admin-page-header-actions {
+  display: contents !important;
+  width: auto !important;
+}
+
+.admin-shell.admin-view-mobile .orders-page .admin-page-header-actions > :first-child,
+html[data-admin-view='mobile'] .orders-page .admin-page-header-actions > :first-child {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-height: 2.5rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.admin-shell.admin-view-mobile .orders-page .admin-page-header-actions > :nth-child(2),
+html[data-admin-view='mobile'] .orders-page .admin-page-header-actions > :nth-child(2) {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+}
+
+@media (max-width: 767.98px) {
+  html:not([data-admin-view='desktop']) .orders-page .admin-page-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
+  }
+
+  html:not([data-admin-view='desktop']) .orders-page .admin-page-header-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  html:not([data-admin-view='desktop']) .orders-page .admin-page-header-actions {
+    display: contents !important;
+    width: auto !important;
+  }
+
+  html:not([data-admin-view='desktop']) .orders-page .admin-page-header-actions > :first-child {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    min-height: 2.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  html:not([data-admin-view='desktop']) .orders-page .admin-page-header-actions > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+}
+
 .orders-page .orders-search-panel {
   background: #ffffff !important;
   border: 2px solid var(--oc-line) !important;
@@ -1321,6 +1401,183 @@
 .oc-metric-value--warn {
   color: #b04a4a;
   font-size: 1.35rem;
+}
+
+/* 暱稱查單：手機版標題左、同步團務右同一行 */
+.admin-shell.admin-view-mobile .nickname-search-page .admin-page-header,
+html[data-admin-view='mobile'] .nickname-search-page .admin-page-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.65rem;
+}
+
+.admin-shell.admin-view-mobile .nickname-search-page .admin-page-header-text,
+html[data-admin-view='mobile'] .nickname-search-page .admin-page-header-text {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.admin-shell.admin-view-mobile .nickname-search-page .admin-page-header-actions,
+html[data-admin-view='mobile'] .nickname-search-page .admin-page-header-actions {
+  display: contents !important;
+  width: auto !important;
+}
+
+.admin-shell.admin-view-mobile .nickname-search-page .nickname-search-sync-btn,
+html[data-admin-view='mobile'] .nickname-search-page .nickname-search-sync-btn {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.admin-shell.admin-view-mobile .nickname-search-page .nickname-search-view-toggle,
+html[data-admin-view='mobile'] .nickname-search-page .nickname-search-view-toggle {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+}
+
+/* 付款回報：手機預覽時兩顆按鈕維持同一列小尺寸 */
+.admin-shell.admin-view-mobile .nickname-search-page.payment-report-page .admin-page-header,
+html[data-admin-view='mobile'] .nickname-search-page.payment-report-page .admin-page-header {
+  grid-template-rows: auto;
+}
+
+.admin-shell.admin-view-mobile .nickname-search-page.payment-report-page .admin-page-header-actions,
+.admin-shell.admin-view-mobile .nickname-search-page.payment-report-page .pr-header-actions,
+html[data-admin-view='mobile'] .nickname-search-page.payment-report-page .admin-page-header-actions,
+html[data-admin-view='mobile'] .nickname-search-page.payment-report-page .pr-header-actions {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto !important;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+
+@media (max-width: 767.98px) {
+  html:not([data-admin-view='desktop']) .nickname-search-page .admin-page-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 0.5rem;
+    row-gap: 0.65rem;
+  }
+
+  html:not([data-admin-view='desktop']) .nickname-search-page .admin-page-header-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  html:not([data-admin-view='desktop']) .nickname-search-page .admin-page-header-actions {
+    display: contents !important;
+    width: auto !important;
+  }
+
+  html:not([data-admin-view='desktop']) .nickname-search-page .nickname-search-sync-btn {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  html:not([data-admin-view='desktop']) .nickname-search-page .nickname-search-view-toggle {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+
+  html:not([data-admin-view='desktop']) .nickname-search-page.payment-report-page .admin-page-header {
+    grid-template-rows: auto;
+  }
+
+  html:not([data-admin-view='desktop']) .nickname-search-page.payment-report-page .admin-page-header-actions,
+  html:not([data-admin-view='desktop']) .nickname-search-page.payment-report-page .pr-header-actions {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.4rem;
+    width: auto !important;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+}
+
+/* 付款審核：手機版標題左、重新載入右同一行 */
+.admin-shell.admin-view-mobile .payment-review-page .admin-page-header,
+html[data-admin-view='mobile'] .payment-review-page .admin-page-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+.admin-shell.admin-view-mobile .payment-review-page .admin-page-header-text,
+html[data-admin-view='mobile'] .payment-review-page .admin-page-header-text {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.admin-shell.admin-view-mobile .payment-review-page .admin-page-header-actions,
+html[data-admin-view='mobile'] .payment-review-page .admin-page-header-actions {
+  display: contents !important;
+  width: auto !important;
+}
+
+.admin-shell.admin-view-mobile .payment-review-page .payment-review-reload-btn,
+html[data-admin-view='mobile'] .payment-review-page .payment-review-reload-btn {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+  html:not([data-admin-view='desktop']) .payment-review-page .admin-page-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.5rem;
+  }
+
+  html:not([data-admin-view='desktop']) .payment-review-page .admin-page-header-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  html:not([data-admin-view='desktop']) .payment-review-page .admin-page-header-actions {
+    display: contents !important;
+    width: auto !important;
+  }
+
+  html:not([data-admin-view='desktop']) .payment-review-page .payment-review-reload-btn {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
 }
 
 .nickname-search-page .nickname-search-panel {

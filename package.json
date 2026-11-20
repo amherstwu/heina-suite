@@ -12,6 +12,7 @@
     "bundle:apps-script": "node scripts/bundle-apps-script-code.mjs",
     "build:single-html": "npm run build:gas",
     "preview:ui": "npm run build:gas && npx --yes serve@14 gas-web -l 4175",
+    "preview:gas": "npm run deploy && node scripts/stop-gas-preview.mjs 5280 && node scripts/preview-gas-server.mjs 5280",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "npm run test:smoke",
