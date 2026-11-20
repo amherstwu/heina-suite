@@ -79,7 +79,7 @@ function gb_ensureDefaultSettings_() {
   }
   if (appendRows.length) {
     var start = settingsSheet.getLastRow() + 1;
-    settingsSheet.getRange(start, 1, start + appendRows.length - 1, 2).setValues(appendRows);
+    settingsSheet.getRange(start, 1, appendRows.length, 2).setValues(appendRows);
   }
 }
 
@@ -685,7 +685,7 @@ function gb_performSave_(payload) {
 
   var rows = gb_buildFlatRows_(payload.groups || []);
   if (rows.length > 0) {
-    orderSheet.getRange(2, 1, 1 + rows.length, GB_COLS).setValues(rows);
+    orderSheet.getRange(2, 1, rows.length, GB_COLS).setValues(rows);
   }
 
   // 日記帳與團務分開寫入，避免 saveAppData 覆蓋銀行日記帳
@@ -1100,7 +1100,7 @@ function gb_importDataPack_(pl) {
           for (var c = 0; c < GB_COLS; c++) row.push(r[c] != null ? r[c] : '');
           return row;
         });
-        orderSheet.getRange(2, 1, 1 + ovals.length, GB_COLS).setValues(ovals);
+        orderSheet.getRange(2, 1, ovals.length, GB_COLS).setValues(ovals);
       }
     } else {
       var all = gb_fetchAllData_();
@@ -1123,7 +1123,7 @@ function gb_importDataPack_(pl) {
       var olast2 = orderSheet.getLastRow();
       if (olast2 > 1) orderSheet.getRange(2, 1, olast2, GB_COLS).clearContent();
       if (merged.length) {
-        orderSheet.getRange(2, 1, 1 + merged.length, GB_COLS).setValues(merged);
+        orderSheet.getRange(2, 1, merged.length, GB_COLS).setValues(merged);
       }
     }
   }
@@ -1138,7 +1138,7 @@ function gb_importDataPack_(pl) {
         var jvals = jBody.map(function (r) {
           return [r[0] || '', r[1] || '', r[2] || '', r[3] || '', r[4] || '', r[5] || '', r[6] || ''];
         });
-        journalSheet.getRange(2, 1, 1 + jvals.length, 7).setValues(jvals);
+        journalSheet.getRange(2, 1, jvals.length, 7).setValues(jvals);
       }
     } else {
       var existingJ = {};
@@ -1156,7 +1156,7 @@ function gb_importDataPack_(pl) {
       }
       var jlast2 = journalSheet.getLastRow();
       if (jlast2 > 1) journalSheet.getRange(2, 1, jlast2, 7).clearContent();
-      if (jMerged.length) journalSheet.getRange(2, 1, 1 + jMerged.length, 7).setValues(jMerged);
+      if (jMerged.length) journalSheet.getRange(2, 1, jMerged.length, 7).setValues(jMerged);
     }
   }
 

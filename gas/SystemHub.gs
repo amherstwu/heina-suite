@@ -60,7 +60,7 @@ function shub_put_(category, key, value, note) {
     }
   }
   if (row > 0) {
-    sh.getRange(row, 3, row, 5).setValues([[json, now, n]]);
+    sh.getRange(row, 3, 1, 3).setValues([[json, now, n]]);
   } else {
     sh.appendRow([cat, k, json, now, n]);
     row = sh.getLastRow();

@@ -13,6 +13,8 @@ gas-web/
 *.pem
 *credentials*
 *.secret
+.clasp.json
+.clasprc.json
 
 # Logs & caches
 npm-debug.log*
