@@ -202,7 +202,7 @@ export function SettingsPage() {
                 <p className="mt-2 text-xs leading-relaxed text-ds-text-secondary">
                   {remote
                     ? '正式站密碼存在 Apps Script 指令碼屬性，修改後所有管理工作階段會失效。'
-                    : '本機預覽密碼只存在這台瀏覽器。'}
+                    : '管理密碼只存在這台瀏覽器。'}
                 </p>
                 {remote ? (
                   <label className="mt-3 block">

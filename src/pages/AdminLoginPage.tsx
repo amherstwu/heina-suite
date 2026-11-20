@@ -261,7 +261,7 @@ export function AdminLoginPage() {
           <p className="mt-5 text-[11px] leading-relaxed text-slate-500">
             {remote
               ? '正式站密碼存在 Apps Script 指令碼屬性。工作階段關閉分頁後失效。'
-              : `本機預覽的密碼只存在這台瀏覽器。連續錯誤 ${maxAttempts} 次將鎖定 ${lockMinutes} 分鐘。`}
+              : `管理密碼只存在這台瀏覽器。連續錯誤 ${maxAttempts} 次將鎖定 ${lockMinutes} 分鐘。`}
           </p>
         </Card>
       </div>
